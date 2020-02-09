@@ -1,5 +1,8 @@
 package com.psm.api.workload.dto;
 
+import java.util.HashMap;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
@@ -9,7 +12,7 @@ public class WorkloadDto {
 	@JsonProperty("Uri")
 	String uri;
 	@JsonProperty("AvailableTransitions")
-	String availableTransitions;
+	List<HashMap<String, String>> availableTransitions;
 	@JsonProperty("ContainerUri")
 	String containerUri;
 	@JsonProperty("CurrentState")
@@ -35,17 +38,17 @@ public class WorkloadDto {
 	@JsonProperty("OperatingSystemVersion")
 	String operatingSystemVersion;
 	@JsonProperty("Parameters")
-	String parameters;
+	List<HashMap<String, String>> parameters;
 	@JsonProperty("PrepareForFailoverConfigurationUri")
 	String prepareForFailoverConfigurationUri;
 	@JsonProperty("RecoveryPoints")
-	String recoveryPoints;
+	List<HashMap<String, String>> recoveryPoints;
 	@JsonProperty("ScheduleActive")
 	String scheduleActive;
 	@JsonProperty("SchedulesUri")
 	String schedulesUri;
 	@JsonProperty("Status")
-	String status;
+	List<HashMap<String, String>> status;
 	@JsonProperty("Tag")
 	String tag;
 	@JsonProperty("TestCutoverMarkedSuccessful")

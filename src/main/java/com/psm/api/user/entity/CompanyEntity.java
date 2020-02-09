@@ -12,6 +12,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import com.psm.api.workload.entity.WorkloadEntity;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -33,6 +36,9 @@ public class CompanyEntity {
 	
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
 	private Collection<UserEntity> user;
+	
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
+	private Collection<WorkloadEntity> workload;
 	
 	@Column(nullable = false, columnDefinition = "datetime default getdate()")
 	private Date createdDatetime;

@@ -7,5 +7,5 @@ import org.springframework.boot.configurationprocessor.json.JSONObject;
 import com.psm.api.workload.dto.WorkloadsDto;
 
 public interface WorkloadService {
-	WorkloadsDto getBoardList() throws Exception;
+	WorkloadsDto getWorkloadList() throws Exception;
 }
