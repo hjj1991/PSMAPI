@@ -86,10 +86,12 @@ public class ResponseService {
 	}
 
 	// 단일건 결과를 처리하는 메소드
-	public <T> SingleResult<T> getSingleFailResult(T data) {
+	public <T> SingleResult<T> getSingleResult(T data, int code, String msg, boolean success) {
 		SingleResult<T> result = new SingleResult<>();
 		result.setData(data);
-		setFailResult(result);
+		result.setCode(code);
+		result.setMsg(msg);
+		result.setSuccess(success);
 		return result;
 	}
 }

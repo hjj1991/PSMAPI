@@ -15,6 +15,7 @@
 	
 	<!--  로거  -->
 	<logger name="com.psm.api" level="DEBUG" appender-ref="console"/>
+	<logger name="com.psm.api" level="ERROR" appender-ref="console"/>
 	<logger name="jdbc.sqlonly" level="INFO" appender-ref="console-infolog"/>
 	<logger name="jdbc.resultsettable" level="INFO" appender-ref="console-infolog"/>
 	<!-- 루트 로거 -->

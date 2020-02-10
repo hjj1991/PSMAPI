@@ -1,0 +1,50 @@
+package com.psm.api.workload.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+import com.psm.api.user.entity.CompanyEntity;
+
+import lombok.Data;
+
+@Entity
+@Table(name="Tbl_apiserver_list")
+@Data
+public class ApiServerListEntity {
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name = "apiserver_idx")
+	private int apiserverIdx;
+	
+	@Column(nullable = false)
+	private String userNameToAccessProtectServer;
+	
+	@Column(nullable = false)
+	private String passwordToAccessProtectServer;
+	
+	@Column(nullable = false)
+	private String domainNameToAccessProtectServer;
+	
+	@Column(nullable = false)
+	private String serverHost;
+	
+	@Column(nullable = false, columnDefinition = "datetime2 default getdate()")
+	private Date createdDate;
+	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String deletedYn;
+	
+	@ManyToOne(optional = true, fetch = FetchType.LAZY)
+	@JoinColumn(name="company_idx", nullable = true)
+	private CompanyEntity companyIdx;
+	
+}

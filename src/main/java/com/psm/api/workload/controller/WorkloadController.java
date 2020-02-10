@@ -1,5 +1,7 @@
 package com.psm.api.workload.controller;
 
+import java.util.HashMap;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,8 +32,13 @@ public class WorkloadController {
 	@GetMapping(value = "/workload")
 	public SingleResult<WorkloadsDto> getWorkloadList() throws Exception {
 		// 결과데이터가 여러건인경우 getListResult를 이용해서 결과를 출력한다.
+		HashMap<String, Object> result = new HashMap<>();
+		result = workloadService.getWorkloadList();
+		if(result.get("status") == "200") {
+			return responseService.getSingleResult((WorkloadsDto)result.get("data"));
+		}else {
+			return responseService.getSingleResult(null, Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), false);
+		}
 		
-		WorkloadsDto value = workloadService.getWorkloadList();
-		return responseService.getSingleResult(value);
 	}
 }

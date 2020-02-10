@@ -1,6 +1,5 @@
 package com.psm.api.user.entity;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Date;
 
@@ -13,13 +12,14 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.psm.api.workload.entity.ApiServerListEntity;
 import com.psm.api.workload.entity.WorkloadEntity;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="tbl_company")
+@Table(name="Tbl_company")
 @NoArgsConstructor
 @Data
 public class CompanyEntity {
@@ -40,8 +40,11 @@ public class CompanyEntity {
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
 	private Collection<WorkloadEntity> workload;
 	
-	@Column(nullable = false, columnDefinition = "datetime default getdate()")
-	private Date createdDatetime;
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
+	private Collection<ApiServerListEntity> apiServerList;
+	
+	@Column(nullable = false, columnDefinition = "datetime2 default getdate()")
+	private Date createdDate;
 	
 	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
 	private String deletedYn;

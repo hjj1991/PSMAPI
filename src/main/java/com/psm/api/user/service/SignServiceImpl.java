@@ -1,0 +1,83 @@
+package com.psm.api.user.service;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.psm.api.common.exception.CUserNotFoundException;
+import com.psm.api.common.exception.PasswordNotMatchException;
+import com.psm.api.configuration.security.JwtTokenProvider;
+import com.psm.api.user.dto.UserLoginDto;
+import com.psm.api.user.entity.TokenEntity;
+import com.psm.api.user.entity.UserEntity;
+import com.psm.api.user.repository.TokenRepository;
+import com.psm.api.user.repository.UserRepository;
+
+import io.jsonwebtoken.Jwts;
+
+@Service
+public class SignServiceImpl implements SignService{
+	
+	@Autowired
+	JwtTokenProvider jwtTokenProvider;
+	@Autowired
+	private UserRepository userRepository;
+	@Autowired
+	private TokenRepository tokenRepository;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
+	@Value("spring.jwt.secret")
+	private String secretKey;
+	@Override
+	public HashMap<String, String> signIn(UserLoginDto userLoginDto) throws Exception {
+		
+		UserEntity user = userRepository.findByUserId(userLoginDto.getUserId()).orElseThrow(CUserNotFoundException::new);
+		if (!passwordEncoder.matches(userLoginDto.getUserPw(), user.getPassword()))
+			throw new PasswordNotMatchException();
+		
+		HashMap<String, String> result = new HashMap<>();
+		List<String> tokenInfo = new ArrayList<String>();
+		tokenInfo = jwtTokenProvider.createToken(user.getUsername(), user.getRoles());
+		result.put("X_AUTH_TOKEN", tokenInfo.get(0));
+		result.put("exAuthToken", tokenInfo.get(1));
+		result.put("X_REFRESH_TOKEN", jwtTokenProvider.createRefreshToken(user.getUsername(), user.getRoles()));
+		result.put("name", user.getUsername());
+		result.put("emailAddr", user.getUserEmail());
+		
+		
+		return result;
+	}	
+	
+	@Override
+	public HashMap<String, String> tokenReissue(String refreshToken) throws Exception {
+		List<String> jwtRoles =  new ArrayList<String>();
+		String jwtUserId = null;
+		HashMap<String, String> result = new HashMap<String, String>();
+		List<String> tokenInfo = new ArrayList<String>();
+		if(jwtTokenProvider.validateToken(refreshToken)) {	//리프레쉬 토큰 검증 후 토큰 디코딩하여 정보가져옴
+			TokenEntity tokenEntity = tokenRepository.findByRefreshToken(refreshToken);
+			jwtRoles.add(Jwts.parser().setSigningKey(secretKey.getBytes("UTF-8")).parseClaimsJws(refreshToken).getBody().get("roles").toString().replace("[", "").replace("]", ""));
+			jwtUserId = Jwts.parser().setSigningKey(secretKey.getBytes("UTF-8")).parseClaimsJws(refreshToken).getBody().getSubject();
+			tokenInfo = jwtTokenProvider.createToken(jwtUserId,jwtRoles);
+			result.put("code", "1");
+			result.put("X_AUTH_TOKEN", tokenInfo.get(0));
+			result.put("exAuthToken", tokenInfo.get(1));
+		}else {
+			result.put("code", "999");
+		}
+		
+		return result;
+		
+//		result.put("X-AUTH-TOKEN", jwtTokenProvider.createToken(jwtUserId,jwtRoles)); //가져온 정보로 토큰 재생성
+		
+		
+
+	}
+}

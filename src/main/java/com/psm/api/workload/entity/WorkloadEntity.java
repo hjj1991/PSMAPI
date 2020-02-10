@@ -1,6 +1,5 @@
 package com.psm.api.workload.entity;
 
-import java.util.Collection;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -14,13 +13,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.psm.api.user.entity.CompanyEntity;
-import com.psm.api.user.entity.UserEntity;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="tbl_workload")
+@Table(name="Tbl_workload")
 @Data
 public class WorkloadEntity {
 	@Id
@@ -28,14 +25,14 @@ public class WorkloadEntity {
 	@Column(name = "workload_idx")
 	private int workloadIdx;
 	
-	@Column(nullable = false, unique = true, length = 100)
+	@Column(nullable = false, unique = true)
 	private String workloadId;	
 	
 	@ManyToOne(optional = true, fetch = FetchType.LAZY)
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String targetId;
 	
 	@Column(nullable = false)
@@ -104,67 +101,67 @@ public class WorkloadEntity {
 	@Column(nullable = false, columnDefinition = "datetime2")
 	private Date lastUpdated;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String failoverMachineId;
 	
-	@Column(nullable = false, length = 100, columnDefinition = "varchar(100) default ''")
+	@Column(nullable = false, columnDefinition = "varchar(255) default ''")
 	private String nextFullOn;
 	
-	@Column(nullable = false, length = 100, columnDefinition = "varchar(100) default ''")
+	@Column(nullable = false, columnDefinition = "varchar(255) default ''")
 	private String nextIncrementalOn;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String onlineStatus;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String protectionLevel;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String protectionState;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String targetPRO;
 	
-	@Column(nullable = true, length = 100)
+	@Column(nullable = true)
 	private String workflowStep;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String workloadLifecycle;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String workloadGroupId;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String replicationScheduleStatus;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String sourceMachineControllerAlias;
 	
-	@Column(nullable = false, length = 200)
+	@Column(nullable = false)
 	private String prepareForFailoverConfigurationUri;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String scheduleActive;
 	
-	@Column(nullable = false, length = 200)
+	@Column(nullable = false)
 	private String schedulesUri;
 	
 	@Column(nullable = false, columnDefinition = "varchar(100) default ''")
 	private String tag;
 	
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false)
 	private String testCutoverMarkedSuccessful;
 	
-	@Column(nullable = false, length = 200)
+	@Column(nullable = false)
 	private String testFailoverConfigurationUri;
 	
-	@Column(nullable = true, length = 100)
+	@Column(nullable = true)
 	private String tmData;
 	
-	@Column(nullable = true, length = 100)
+	@Column(nullable = true)
 	private String windowsServiceUri;
 	
-	@Column(nullable = false, length = 200)
+	@Column(nullable = false)
 	private String workloadConfigurationUri;
 	
 }

@@ -1,5 +1,6 @@
 package com.psm.api.workload.service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.boot.configurationprocessor.json.JSONObject;
@@ -7,5 +8,5 @@ import org.springframework.boot.configurationprocessor.json.JSONObject;
 import com.psm.api.workload.dto.WorkloadsDto;
 
 public interface WorkloadService {
-	WorkloadsDto getWorkloadList() throws Exception;
+	HashMap<String, Object> getWorkloadList() throws Exception;
 }

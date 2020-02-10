@@ -61,4 +61,6 @@ public class WorkloadDto {
 	String windowsServicesUri;
 	@JsonProperty("WorkloadConfigurationUri")
 	String workloadConfigurationUri;
+	
+	String companyName;
 }
