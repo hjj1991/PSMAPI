@@ -23,7 +23,9 @@ import com.psm.api.common.response.SingleResult;
 import com.psm.api.common.response.service.ResponseService;
 import com.psm.api.user.dto.UserDto;
 import com.psm.api.user.dto.UserLoginDto;
+import com.psm.api.user.dto.UserSignUpDto;
 import com.psm.api.user.entity.UserEntity;
+import com.psm.api.user.repository.CompanyRepository;
 import com.psm.api.user.repository.UserRepository;
 import com.psm.api.user.service.SignService;
 import com.psm.api.user.service.UserService;
@@ -48,6 +50,8 @@ public class UserController {
 	private UserService userService;
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private CompanyRepository companyRepository;
 	
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -70,7 +74,7 @@ public class UserController {
  
 	@ApiOperation(value = "가입", notes = "회원가입을 한다.")
 	@PutMapping(value = "/signup")
-	public CommonResult signin(@RequestBody @Valid UserDto userDto, BindingResult result) {
+	public CommonResult signin(@RequestBody @Valid UserSignUpDto userSignUpDto, BindingResult result) {
 		if(result.hasErrors()) {
 			List<FieldError> errors = result.getFieldErrors();
 			HashMap<String, String> errorList = new HashMap<String, String>();
@@ -87,16 +91,16 @@ public class UserController {
 //				.userEmail(userDto.getUserEmail())
 //				.roles(Collections.singletonList("ROLE_USER")).build());
 		UserEntity userEntity = new UserEntity();
-		userEntity.setUserId(userDto.getUserId());
-		userEntity.setUserPw(passwordEncoder.encode((userDto.getUserPw())));
-		userEntity.setUserName(userDto.getUserName());
-		userEntity.setUserEmail(userDto.getUserEmail());
+		userEntity.setUserId(userSignUpDto.getUserId());
+		userEntity.setUserPw(passwordEncoder.encode((userSignUpDto.getUserPw())));
+		userEntity.setUserName(userSignUpDto.getUserName());
+		userEntity.setUserEmail(userSignUpDto.getUserEmail());
 		userEntity.setRoles(Collections.singletonList("ROLE_USER"));
-		userEntity.setUserTel(userDto.getUserTel());
-		userEntity.setUserPhone(userDto.getUserPhone());
-//		userEntity.setCompanyIdx();
+		userEntity.setUserTel(userSignUpDto.getUserTel());
+		userEntity.setUserPhone(userSignUpDto.getUserPhone());
+		userEntity.setCompanyIdx(companyRepository.getOne(userSignUpDto.getCompanyId()));
 		
-//		userRepository.save(userDto);
+		userRepository.save(userEntity);
 		return responseService.getSuccessResult();
 	}
 }

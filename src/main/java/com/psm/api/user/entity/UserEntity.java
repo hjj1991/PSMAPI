@@ -18,6 +18,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.DynamicInsert;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,23 +37,24 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@DynamicInsert
 @Table(name="Tbl_user")
 public class UserEntity implements UserDetails  {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int userIdx;
 	
-//	@ManyToOne(optional = true, fetch = FetchType.LAZY)
-//	@JoinColumn(name="company_idx", nullable = true)
-//	private CompanyEntity companyIdx;
+	@ManyToOne(optional = true, fetch = FetchType.LAZY)
+	@JoinColumn(name="company_idx", nullable = true)
+	private CompanyEntity companyIdx;
 	
 	
-	@JoinColumn(name = "company_idx", insertable = false, updatable = false)
-	@ManyToOne(targetEntity = CompanyEntity.class, fetch = FetchType.EAGER)
-	private CompanyEntity companyEntity;
-
-	@Column(name = "company_idx")
-	private int companyIdx;
+//	@JoinColumn(name = "company_idx", insertable = false, updatable = false)
+//	@ManyToOne(targetEntity = CompanyEntity.class, fetch = FetchType.EAGER)
+//	private CompanyEntity companyEntity;
+//
+//	@Column(name = "company_idx")
+//	private int companyIdx;
 	
 	
 	@Column(nullable = false, unique = true, length = 60)
