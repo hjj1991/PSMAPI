@@ -19,7 +19,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="Tbl_company")
+@Table(name="tbl_company")
 @NoArgsConstructor
 @Data
 public class CompanyEntity {

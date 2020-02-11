@@ -17,7 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name="token_table")
+@Table(name="tbl_token")
 @NoArgsConstructor
 @Data
 public class TokenEntity {

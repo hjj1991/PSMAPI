@@ -44,10 +44,10 @@ public class SignServiceImpl implements SignService{
 		
 		HashMap<String, String> result = new HashMap<>();
 		List<String> tokenInfo = new ArrayList<String>();
-		tokenInfo = jwtTokenProvider.createToken(user.getUsername(), user.getRoles());
+		tokenInfo = jwtTokenProvider.createToken(user.getUsername(), user.getUserRoles());
 		result.put("X_AUTH_TOKEN", tokenInfo.get(0));
 		result.put("exAuthToken", tokenInfo.get(1));
-		result.put("X_REFRESH_TOKEN", jwtTokenProvider.createRefreshToken(user.getUsername(), user.getRoles()));
+		result.put("X_REFRESH_TOKEN", jwtTokenProvider.createRefreshToken(user.getUsername(), user.getUserRoles()));
 		result.put("name", user.getUsername());
 		result.put("emailAddr", user.getUserEmail());
 		

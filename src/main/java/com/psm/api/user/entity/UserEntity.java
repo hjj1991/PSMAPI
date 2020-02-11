@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -38,7 +39,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicInsert
-@Table(name="Tbl_user")
+@Table(name="tbl_user")
 public class UserEntity implements UserDetails  {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
@@ -48,20 +49,11 @@ public class UserEntity implements UserDetails  {
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
 	
-	
-//	@JoinColumn(name = "company_idx", insertable = false, updatable = false)
-//	@ManyToOne(targetEntity = CompanyEntity.class, fetch = FetchType.EAGER)
-//	private CompanyEntity companyEntity;
-//
-//	@Column(name = "company_idx")
-//	private int companyIdx;
-	
-	
 	@Column(nullable = false, unique = true, length = 60)
 	private String userId;
 	
 	@Column(nullable = false, length = 60)
-	private String userName;
+	private String name;
 	
 	@Column(nullable = false, length = 100)
 	private String userPw;
@@ -82,12 +74,13 @@ public class UserEntity implements UserDetails  {
 	private String deletedYn;
 
 	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(name="tbl_userRole")
 	@Builder.Default
-	private List<String> roles = new ArrayList<>();
+	private List<String> userRoles = new ArrayList<>();
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return this.roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+		return this.userRoles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 	}
 
 	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
