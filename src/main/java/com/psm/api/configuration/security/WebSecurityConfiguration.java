@@ -38,10 +38,10 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.cors()
 				.and().authorizeRequests() // 다음 리퀘스트에 대한 사용권한 체크
 				.requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-//				.antMatchers("/*/signin", "/*/signup", "/*/tokenreissue", "/*/user/checkid/*", "/v1/*").permitAll() // 가입 및 인증 주소는 누구나 접근가능
-				.antMatchers(HttpMethod.POST, "/v1/*").permitAll() // 가입 및 인증 주소는 누구나 접근가능
-				.antMatchers(HttpMethod.GET, "/v1/*").permitAll() // hellowworld로 시작하는 GET요청 리소스는 누구나 접근가능
-				.antMatchers(HttpMethod.PUT, "/v1/*").permitAll() // hellowworld로 시작하는 GET요청 리소스는 누구나 접근가능
+				.antMatchers("/v1/signin", "/v1/tokenreissue").permitAll() // 가입 및 인증 주소는 누구나 접근가능
+//				.antMatchers(HttpMethod.POST, "/v1/*").permitAll() // 가입 및 인증 주소는 누구나 접근가능
+//				.antMatchers(HttpMethod.GET, "/v1/*").permitAll() // hellowworld로 시작하는 GET요청 리소스는 누구나 접근가능
+//				.antMatchers(HttpMethod.PUT, "/v1/*").permitAll() // hellowworld로 시작하는 GET요청 리소스는 누구나 접근가능
 //				.antMatchers(HttpMethod.POST, "/*/board/**").permitAll() // hellowworld로 시작하는 GET요청 리소스는 누구나 접근가능
 				.anyRequest().hasRole("USER") // 그외 나머지 요청은 모두 인증된 회원만 접근 가능
 				.and().addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),  // jwt token 필터를 id/password 인증 필터 전에 넣는다
