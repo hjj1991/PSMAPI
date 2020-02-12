@@ -94,4 +94,12 @@ public class ResponseService {
 		result.setSuccess(success);
 		return result;
 	}
+	// data가 존재하지 않는 결과를 처리하는 메소드
+	public <T> SingleResult<T> getNotDataSingleResult(int code, String msg, boolean success) {
+		SingleResult<T> result = new SingleResult<>();
+		result.setCode(code);
+		result.setMsg(msg);
+		result.setSuccess(success);
+		return result;
+	}
 }

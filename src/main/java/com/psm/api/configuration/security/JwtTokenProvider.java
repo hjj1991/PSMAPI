@@ -134,4 +134,17 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 			return false;
 		}
 	}
+	// Jwt 토큰의 유효성 + 만료일자 확인
+	public boolean validateRefreshToken(String jwtToken) {
+		if(tokenRepository.findByRefreshToken(jwtToken) != null) {
+			try {
+				Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(jwtToken);
+				return !claims.getBody().getExpiration().before(new Date());
+			} catch (Exception e) {
+				return false;
+			}
+		}else {
+			return false;
+		}
+	}
 }

@@ -10,6 +10,8 @@ import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -79,11 +81,19 @@ public class UserController {
 	@ApiOperation(value = "로그인", notes = "아이디로 로그인을 한다.")
 	@PostMapping(value = "/signin")
 	public SingleResult<?> signin(@RequestBody UserLoginDto userLoginDto) throws Exception {
-		HashMap<String, String> result = new HashMap<>();
-		result = signService.signIn(userLoginDto);
+		HashMap<String, String> result = signService.signIn(userLoginDto);
 
 		return responseService.getSingleResult(result);
 	}
+	
+	@ApiOperation(value = "로그아웃", notes = "로그아웃을 한다.")
+	@PostMapping(value = "/signout")
+	public SingleResult<?> signout(@RequestHeader("X_REFRESH_TOKEN") String refreshToken) throws Exception {
+		
+		HashMap<String, String> result = signService.signOut(refreshToken);
+		return responseService.getNotDataSingleResult(Integer.parseInt(result.get("code")), result.get("msg"), Boolean.valueOf(result.get("success")).booleanValue());
+	}
+	
 
 	@ApiOperation(value = "Access토큰 재발급", notes = "refreshToken을 이용하여 accessToken 재발급")
 	@PostMapping(value = "/tokenreissue")
