@@ -2,6 +2,7 @@ package com.psm.api.workload.service;
 
 import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,6 +50,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 		
 		List<ApiServerListEntity> apiserverList = apiServerListRepository.findAll();
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		WorkloadsDto lastWorkloadsList = new WorkloadsDto();
+		List<WorkloadDto> lastWorkloadList = new ArrayList<WorkloadDto>();
 		
 		for(ApiServerListEntity apiserverInfo: apiserverList) {
 			/* Parameters to access PlateSpin Protect Server */
@@ -84,6 +87,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 					if(response2.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 						workloadList.getWorkloads().set(i, mapper.readValue(EntityUtils.toString(response2.getEntity(),"UTF-8"), WorkloadDto.class));
 						workloadList.getWorkloads().get(i).setCompanyName(apiserverInfo.getCompanyIdx().getCompanyName());
+						workloadList.getWorkloads().get(i).setWorkloadServerHost(serverHost);
 						//기존 워크로드ID가 존재하면 업데이트한다.
 						if(workloadRepository.findByWorkloadId(workloadList.getWorkloads().get(i).getUri().substring(workloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1)) != null){
 							WorkloadEntity workloadEntity = new WorkloadEntity();
@@ -191,11 +195,15 @@ public class WorkloadServiceImpl implements WorkloadService {
 						result.put("resultMsg", "접속실패 responseCode:" +  response2.getStatusLine().getStatusCode());
 						return result;
 					}
+					System.out.println("컹컹");
+					System.out.println(workloadList.getWorkloads().get(i));
+					lastWorkloadList.add(workloadList.getWorkloads().get(i));
 				}	
+				
 				//워크로드 동기화 성공시
-				result.put("status", "200");
-				result.put("data", workloadList);
-				return result;
+//				result.put("status", "200");
+//				result.put("data", workloadList);
+//				return result;
 			}else {	//워크로드 리스트 정보 불러오기 실패시
 				result.put("status", "-2");
 				result.put("data", null);
@@ -204,8 +212,11 @@ public class WorkloadServiceImpl implements WorkloadService {
 			}
 
 		}
-		result.put("status", "-3");
-		result.put("data", null);
+		
+//		System.out.println(lastWorkloadList.getWorkloads());
+		lastWorkloadsList.setWorkloads(lastWorkloadList);
+		result.put("status", "200");
+		result.put("data", lastWorkloadsList);
 		result.put("resultMsg", "api서버정보가 없습니다.");	
 		return result;
 

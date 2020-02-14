@@ -62,5 +62,6 @@ public class WorkloadDto {
 	@JsonProperty("WorkloadConfigurationUri")
 	String workloadConfigurationUri;
 	
+	String workloadServerHost;
 	String companyName;
 }
