@@ -8,5 +8,6 @@ import com.psm.api.workload.entity.ApiServerListEntity;
 
 public interface ApiServerListRepository extends CrudRepository<ApiServerListEntity, Integer>  {
 	List<ApiServerListEntity> findAll();
+	ApiServerListEntity findByServerHost(String serverHost);
 
 }
