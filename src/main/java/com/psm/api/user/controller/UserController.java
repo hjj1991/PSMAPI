@@ -98,7 +98,8 @@ public class UserController {
 	@ApiOperation(value = "Access토큰 재발급", notes = "refreshToken을 이용하여 accessToken 재발급")
 	@PostMapping(value = "/tokenreissue")
 	public SingleResult<?> tokenReissue(@RequestBody Map<String, Object> param) throws Exception {
-		return responseService.getSingleResult(signService.tokenReissue((String) param.get("refreshToken")));
+		HashMap<String, Object> result = signService.tokenReissue((String) param.get("refreshToken"));
+		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 	}
 
 	@ApiOperation(value = "가입", notes = "회원가입을 한다.")

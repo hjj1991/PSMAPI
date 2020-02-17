@@ -28,7 +28,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx)
             throws IOException, ServletException {
         // status를 401 에러로 지정
-        response.setStatus(200);
+        response.setStatus(401);
         response.setContentType("application/json;charset=utf-8");
         Map<String, String> map = new HashMap<String, String>();
         

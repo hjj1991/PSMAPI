@@ -53,7 +53,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 		String domainNameToAccessProtectServer = apiserverInfo.getDomainNameToAccessProtectServer();
 		ObjectMapper mapper = new ObjectMapper();
 		
-		HashMap<String, String> list = new HashMap<String,String>(); 
+		HashMap<String, String> list = new HashMap<String,String>();
+		HashMap<String, Object> result = new HashMap<String, Object>();
 		
 		CloseableHttpClient httpClient = HttpClients.createDefault();
 		HttpPost httpPost = new HttpPost(actionUrl);
@@ -75,8 +76,16 @@ public class WorkloadServiceImpl implements WorkloadService {
 		
 	    try {
 	    	response = httpClient.execute(target, httpPost, context);
-	    	list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
-	    	System.out.println(list);
+	    	System.out.println(response.getStatusLine());
+	    	if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+	    		result.put("success", true);
+	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
+		    	System.out.println(list);
+	    	}else {
+	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
+	    		result.put("success", false);
+	    	}
+	    	
 	        
 	    } 
 	    catch (IOException e) {
@@ -84,10 +93,12 @@ public class WorkloadServiceImpl implements WorkloadService {
 	    }
 
 		
-
+		result.put("status", "200");
+		result.put("data", list);
+		result.put("resultMsg", "api서버정보가 없습니다.");	
 
 		
-		return null;
+		return result;
 		
 	}
 	

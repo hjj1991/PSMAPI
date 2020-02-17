@@ -53,14 +53,14 @@ public class WorkloadController {
 		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = false, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "워크로드 액션", notes = "워크로드 액션진행")
 	@PostMapping(value = "/workload/action")
-	public void postWorkloadAction(@RequestBody Map<String, String> param) throws Exception {
+	public SingleResult<?> postWorkloadAction(@RequestBody Map<String, String> param) throws Exception {
 		// 결과데이터가 여러건인경우 getListResult를 이용해서 결과를 출력한다.
 		HashMap<String, Object> result = new HashMap<>();
 		result = workloadService.postWorkloadAction(param.get("serverHost"), param.get("actionUrl"));
 //		if(result.get("status") == "200") {
 //			return responseService.getSingleResult((WorkloadsDto)result.get("data"));
 //		}else {
-//			return responseService.getSingleResult(null, Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), false);
+			return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 //		}
 
 	}
