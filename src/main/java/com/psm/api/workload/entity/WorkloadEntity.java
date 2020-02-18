@@ -12,12 +12,15 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import com.psm.api.user.entity.CompanyEntity;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.psm.api.company.entity.CompanyEntity;
 
 import lombok.Data;
 
 @Entity
 @Table(name="Tbl_workload")
+@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @Data
 public class WorkloadEntity {
 	@Id

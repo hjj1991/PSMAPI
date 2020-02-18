@@ -41,13 +41,13 @@ public class SignServiceImpl implements SignService{
 	@Value("spring.jwt.secret")
 	private String secretKey;
 	@Override
-	public HashMap<String, String> signIn(UserLoginDto userLoginDto) throws Exception {
+	public HashMap<String, Object> signIn(UserLoginDto userLoginDto) throws Exception {
 		
 		UserEntity user = userRepository.findByUserId(userLoginDto.getUserId()).orElseThrow(CUserNotFoundException::new);
 		if (!passwordEncoder.matches(userLoginDto.getUserPw(), user.getPassword()))
 			throw new PasswordNotMatchException();
 		
-		HashMap<String, String> result = new HashMap<>();
+		HashMap<String, Object> result = new HashMap<>();
 		List<String> tokenInfo = new ArrayList<String>();
 		tokenInfo = jwtTokenProvider.createToken(user.getUsername(), user.getUserRoles());
 		result.put("X_AUTH_TOKEN", tokenInfo.get(0));
@@ -55,6 +55,7 @@ public class SignServiceImpl implements SignService{
 		result.put("X_REFRESH_TOKEN", jwtTokenProvider.createRefreshToken(user.getUsername(), user.getUserRoles()));
 		result.put("name", user.getName());
 		result.put("emailAddr", user.getUserEmail());
+		result.put("userRole", user.getUserRoles().get(0));
 		
 		
 		return result;

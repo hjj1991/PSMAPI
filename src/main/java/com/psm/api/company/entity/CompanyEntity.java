@@ -1,4 +1,4 @@
-package com.psm.api.user.entity;
+package com.psm.api.company.entity;
 
 import java.util.Collection;
 import java.util.Date;
@@ -12,6 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.psm.api.user.entity.UserEntity;
 import com.psm.api.workload.entity.ApiServerListEntity;
 import com.psm.api.workload.entity.WorkloadEntity;
 
@@ -34,12 +36,14 @@ public class CompanyEntity {
 	@Column(nullable = false, length = 60)
 	private String companyName;
 	
+	@JsonIgnore
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
 	private Collection<UserEntity> user;
 	
+	@JsonIgnore
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
 	private Collection<WorkloadEntity> workload;
-	
+	@JsonIgnore
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
 	private Collection<ApiServerListEntity> apiServerList;
 	

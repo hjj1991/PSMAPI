@@ -10,8 +10,6 @@ import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -27,12 +25,12 @@ import com.psm.api.common.exception.CUserNotFoundException;
 import com.psm.api.common.response.CommonResult;
 import com.psm.api.common.response.SingleResult;
 import com.psm.api.common.response.service.ResponseService;
+import com.psm.api.company.repository.CompanyRepository;
 import com.psm.api.configuration.security.JwtTokenProvider;
 import com.psm.api.user.dto.UserDetailDto;
 import com.psm.api.user.dto.UserLoginDto;
 import com.psm.api.user.dto.UserSignUpDto;
 import com.psm.api.user.entity.UserEntity;
-import com.psm.api.user.repository.CompanyRepository;
 import com.psm.api.user.repository.UserRepository;
 import com.psm.api.user.service.SignService;
 import com.psm.api.user.service.UserService;
@@ -81,7 +79,7 @@ public class UserController {
 	@ApiOperation(value = "로그인", notes = "아이디로 로그인을 한다.")
 	@PostMapping(value = "/signin")
 	public SingleResult<?> signin(@RequestBody UserLoginDto userLoginDto) throws Exception {
-		HashMap<String, String> result = signService.signIn(userLoginDto);
+		HashMap<String, Object> result = signService.signIn(userLoginDto);
 
 		return responseService.getSingleResult(result);
 	}

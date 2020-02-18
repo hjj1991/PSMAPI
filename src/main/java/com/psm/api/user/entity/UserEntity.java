@@ -24,7 +24,10 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.psm.api.company.entity.CompanyEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,6 +42,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @DynamicInsert
+@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @Table(name="tbl_user")
 public class UserEntity implements UserDetails  {
 	@Id
