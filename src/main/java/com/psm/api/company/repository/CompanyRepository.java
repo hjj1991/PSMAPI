@@ -12,5 +12,7 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Integer>
 	Page<CompanyEntity> findByDeletedYn(String deletedYn, Pageable request);
 	Page<CompanyEntity> findByCompanyNameLike(String companyName, Pageable request);
 	Page<CompanyEntity> findByCompanyIdLike(String companyId, Pageable request);
+	CompanyEntity findByCompanyName(String companyName);
+	CompanyEntity findByCompanyId(String companyId);
 	
 }

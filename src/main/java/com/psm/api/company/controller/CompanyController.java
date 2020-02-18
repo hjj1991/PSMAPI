@@ -14,6 +14,7 @@ import com.psm.api.common.response.SingleResult;
 import com.psm.api.common.response.service.ResponseService;
 import com.psm.api.company.dto.FindCompanyDto;
 import com.psm.api.company.dto.InsertCompanyDto;
+import com.psm.api.company.dto.UpdateCompanyDto;
 import com.psm.api.company.entity.CompanyEntity;
 import com.psm.api.company.repository.CompanyRepository;
 import com.psm.api.company.service.CompanyService;
@@ -54,12 +55,24 @@ public class CompanyController {
 	@ApiImplicitParams({
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "소속회사 조회", notes = "소속회사를 조회한다")
-	@RequestMapping(value = "", method = RequestMethod.PUT)
+	@RequestMapping(value = "", method = RequestMethod.POST)
 	public SingleResult<?> insertCompany(@RequestBody List<InsertCompanyDto> insertCompanyList) {
 		HashMap<String, Object> result = companyService.insertCompany(insertCompanyList);
 
 //		return responseService.getSingleResult(result);
-		return null;
+		return responseService.getSingleResult(result);
+
+	}
+
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
+	@ApiOperation(value = "소속회사 수정", notes = "소속회사를 수정한다.")
+	@RequestMapping(value = "", method = RequestMethod.PUT)
+	public SingleResult<?> updateCompany(@RequestBody UpdateCompanyDto updateCompanyValue) throws Exception {
+		CompanyEntity result = companyService.updateCompany(updateCompanyValue);
+
+//	return responseService.getSingleResult(result);
+		return responseService.getSingleResult(result);
 
 	}
 }

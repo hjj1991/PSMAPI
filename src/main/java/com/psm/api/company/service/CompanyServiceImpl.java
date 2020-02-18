@@ -1,7 +1,9 @@
 package com.psm.api.company.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -9,8 +11,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.microsoft.sqlserver.jdbc.SQLServerException;
+import com.psm.api.common.exception.CCompanyNotFoundException;
+import com.psm.api.common.exception.CUserNotFoundException;
 import com.psm.api.company.dto.FindCompanyDto;
 import com.psm.api.company.dto.InsertCompanyDto;
+import com.psm.api.company.dto.UpdateCompanyDto;
 import com.psm.api.company.entity.CompanyEntity;
 import com.psm.api.company.repository.CompanyRepository;
 
@@ -46,9 +52,39 @@ public class CompanyServiceImpl implements CompanyService {
 	}
 
 	@Override
-	public HashMap<String, Object> insertCompany(List<InsertCompanyDto> insertCompanyList) {
+	public HashMap<String, Object> insertCompany(List<InsertCompanyDto> insertCompanyList)  {
 		// TODO Auto-generated method stub
-		return null;
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		int successInsertCount = 0;
+		int failInsertCount = 0;
+		List<String> failNameList = new ArrayList<String>();
+		for (InsertCompanyDto companyInfo : insertCompanyList) {
+			CompanyEntity insertCompany = new CompanyEntity();
+			//회사명, 회사이이디 중복체크 해야함 없으면 insert를 진행한다.
+			if(companyRepository.findByCompanyName(companyInfo.getCompanyName()) == null && companyRepository.findByCompanyId(companyInfo.getCompanyId()) == null){
+				insertCompany.setCompanyId(companyInfo.getCompanyId());
+				insertCompany.setCompanyName(companyInfo.getCompanyName());
+				companyRepository.save(insertCompany);
+				successInsertCount++;
+			}else {
+				failInsertCount++;
+				failNameList.add(companyInfo.getCompanyName());
+			}
+		}
+		result.put("successInsertCount", successInsertCount);
+		result.put("failInsertCount", failInsertCount);
+		result.put("failNameList", failNameList);
+		return result;
+	}
+
+	@Override
+	public CompanyEntity updateCompany(UpdateCompanyDto updateCompanyValue) {
+		// TODO Auto-generated method stub
+		CompanyEntity updateEntity = companyRepository.findById(updateCompanyValue.getCompanyIdx()).orElseThrow(CCompanyNotFoundException::new);
+		updateEntity.setCompanyName(updateCompanyValue.getCompanyName());
+		updateEntity.setCompanyId(updateCompanyValue.getCompanyId());
+		updateEntity = companyRepository.save(updateEntity);
+		return updateEntity;
 	}
 
 }

@@ -47,10 +47,10 @@ public class CompanyEntity {
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "companyIdx")
 	private Collection<ApiServerListEntity> apiServerList;
 	
-	@Column(nullable = false, columnDefinition = "datetime2 default getdate()")
+	@Column(nullable = false, columnDefinition = "datetime2 default getdate()", insertable = false, updatable = false)
 	private Date createdDate;
 	
-	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'", insertable = false, updatable = false)
 	private String deletedYn;
 	
 }

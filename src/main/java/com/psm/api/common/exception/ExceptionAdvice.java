@@ -30,6 +30,12 @@ public class ExceptionAdvice {
         return responseService.getFailResult(Integer.valueOf(getMessage("-1")), getMessage("사용자가 존재하지 않습니다."));
     }
     
+    @ExceptionHandler(CCompanyNotFoundException.class)
+    @ResponseStatus(HttpStatus.OK)
+    protected CommonResult companyNotFoundException(HttpServletRequest request, CUserNotFoundException e) {
+        return responseService.getFailResult(Integer.valueOf(getMessage("-1")), getMessage("사용자가 존재하지 않습니다."));
+    }
+    
     @ExceptionHandler(PasswordNotMatchException.class)
     @ResponseStatus(HttpStatus.OK)
     protected CommonResult passwordNotMatchExcepiton(HttpServletRequest request, PasswordNotMatchException e) {
