@@ -12,6 +12,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.DynamicUpdate;
+
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.company.entity.CompanyEntity;
@@ -21,6 +23,7 @@ import lombok.Data;
 @Entity
 @Table(name="Tbl_apiserver_list")
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
+@DynamicUpdate
 @Data
 public class ApiServerListEntity {
 	@Id

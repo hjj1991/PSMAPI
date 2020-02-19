@@ -114,6 +114,10 @@ public class WorkloadServiceImpl implements WorkloadService {
 		List<WorkloadDto> workloadList = new ArrayList<WorkloadDto>();
 		
 		for(ApiServerListEntity apiserverInfo: apiserverList) {
+			/* 해당 API서버가 삭제되었거나 소속 회사가 삭제된 경우 시행하지 않음 */
+			if(apiserverInfo.getCompanyIdx().getDeletedYn().equals("Y") || apiserverInfo.getDeletedYn().equals("Y")) {
+				continue;
+			}
 			/* Parameters to access PlateSpin Protect Server */
 			String userNameToAccessProtectServer = apiserverInfo.getUserNameToAccessProtectServer();
 			String passwordToAccessProtectServer = apiserverInfo.getPasswordToAccessProtectServer();

@@ -75,4 +75,17 @@ public class CompanyController {
 		return responseService.getSingleResult(result);
 
 	}
+
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
+	@ApiOperation(value = "소속회사 삭제", notes = "소속회사를 삭제한다.")
+	@RequestMapping(value = "", method = RequestMethod.DELETE)
+	public SingleResult<?> deleteCompany(@RequestBody List<String> deleteCompanyIdxList) throws Exception {
+		HashMap<String, Object> result = companyService.deleteCompany(deleteCompanyIdxList);
+
+//return responseService.getSingleResult(result);
+		return responseService.getSingleResult(result);
+
+	}
+
 }

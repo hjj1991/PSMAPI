@@ -18,4 +18,6 @@ public interface CompanyService {
 
 	CompanyEntity updateCompany(UpdateCompanyDto updateCompanyValue);
 
+	HashMap<String, Object> deleteCompany(List<String> deleteCompanyIdxList);
+
 }

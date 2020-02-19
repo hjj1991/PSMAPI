@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.microsoft.sqlserver.jdbc.SQLServerException;
@@ -32,7 +33,7 @@ public class CompanyServiceImpl implements CompanyService {
 		// TODO Auto-generated method stub
 //		if(findCompanyDto.getPage())
 		Page<CompanyEntity> result = null;
-		PageRequest pageRequest = PageRequest.of(findCompanyDto.getPage() - 1,  findCompanyDto.getPageSize()); 
+		PageRequest pageRequest = PageRequest.of(findCompanyDto.getPage() - 1,  findCompanyDto.getPageSize(), Sort.by("deletedYn").ascending().and(Sort.by("companyIdx").ascending())); 
 		if(findCompanyDto.getFindTarget() != null && findCompanyDto.getFindKeyword() != null) {
 			String target = findCompanyDto.getFindTarget();
 			String keyword = findCompanyDto.getFindKeyword();
@@ -80,11 +81,51 @@ public class CompanyServiceImpl implements CompanyService {
 	@Override
 	public CompanyEntity updateCompany(UpdateCompanyDto updateCompanyValue) {
 		// TODO Auto-generated method stub
+		String companyName, companyId, deletedYn;
 		CompanyEntity updateEntity = companyRepository.findById(updateCompanyValue.getCompanyIdx()).orElseThrow(CCompanyNotFoundException::new);
-		updateEntity.setCompanyName(updateCompanyValue.getCompanyName());
-		updateEntity.setCompanyId(updateCompanyValue.getCompanyId());
+		if(updateCompanyValue.getCompanyName() == null) {
+			companyName = updateEntity.getCompanyName();
+		}else {
+			companyName = updateCompanyValue.getCompanyName();
+		}
+		if(updateCompanyValue.getCompanyId() == null) {
+			companyId = updateEntity.getCompanyId();
+		}else {
+			companyId = updateCompanyValue.getCompanyId();
+		}
+		if(updateCompanyValue.getDeletedYn() == null) {
+			deletedYn = updateEntity.getDeletedYn();
+		}else {
+			deletedYn = updateCompanyValue.getDeletedYn();
+		}
+		updateEntity.setCompanyName(companyName);
+		updateEntity.setCompanyId(companyId);
+		updateEntity.setDeletedYn(deletedYn);
 		updateEntity = companyRepository.save(updateEntity);
 		return updateEntity;
+	}
+
+	@Override
+	public HashMap<String, Object> deleteCompany(List<String> deleteCompanyIdxList) {
+		// TODO Auto-generated method stub
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		int successDeleteCount = 0;
+		int failDeleteCount = 0;
+		List<String> deletedCompanyList = new ArrayList<String>();
+		for(String companyIdx : deleteCompanyIdxList) {
+			CompanyEntity deleteEntity = companyRepository.findById(Integer.valueOf(companyIdx)).orElseThrow(CCompanyNotFoundException::new);
+			deleteEntity.setDeletedYn("Y");
+			System.out.println("호이0");
+			deleteEntity = companyRepository.save(deleteEntity);
+			System.out.println("호이1");
+			successDeleteCount++;
+			deletedCompanyList.add(deleteEntity.getCompanyName());
+		}
+		result.put("successDeleteCount", successDeleteCount);
+		result.put("failDeleteCount", failDeleteCount);
+		result.put("deletedCompanyList", deletedCompanyList);
+		
+		return result;
 	}
 
 }

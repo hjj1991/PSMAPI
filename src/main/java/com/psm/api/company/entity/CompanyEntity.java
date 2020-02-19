@@ -12,6 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.DynamicUpdate;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.workload.entity.ApiServerListEntity;
@@ -24,6 +26,7 @@ import lombok.NoArgsConstructor;
 @Table(name="tbl_company")
 @NoArgsConstructor
 @Data
+@DynamicUpdate
 public class CompanyEntity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
@@ -50,7 +53,7 @@ public class CompanyEntity {
 	@Column(nullable = false, columnDefinition = "datetime2 default getdate()", insertable = false, updatable = false)
 	private Date createdDate;
 	
-	@Column(nullable=false, columnDefinition = "char(1) default 'N'", insertable = false, updatable = false)
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'", insertable = false)
 	private String deletedYn;
 	
 }

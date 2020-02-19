@@ -9,12 +9,15 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.DynamicUpdate;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name="Tbl_schedule")
 @NoArgsConstructor
+@DynamicUpdate
 @Data
 public class ScheduleEntity {
 	@Id
