@@ -1,4 +1,4 @@
-package com.psm.api.workload.entity;
+package com.psm.api.apiserver.entity;
 
 import java.util.Date;
 
@@ -13,8 +13,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.company.entity.CompanyEntity;
 
@@ -22,7 +24,7 @@ import lombok.Data;
 
 @Entity
 @Table(name="Tbl_apiserver_list")
-@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
+//@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @DynamicUpdate
 @Data
 public class ApiServerListEntity {
@@ -49,6 +51,7 @@ public class ApiServerListEntity {
 	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
 	private String deletedYn;
 	
+	@JsonIgnore
 	@ManyToOne(optional = true, fetch = FetchType.LAZY)
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;

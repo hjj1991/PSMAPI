@@ -56,6 +56,7 @@ public class CompanyServiceImpl implements CompanyService {
 	public HashMap<String, Object> insertCompany(List<InsertCompanyDto> insertCompanyList)  {
 		// TODO Auto-generated method stub
 		HashMap<String, Object> result = new HashMap<String, Object>();
+		HashMap<String, Object> data = new HashMap<String, Object>();
 		int successInsertCount = 0;
 		int failInsertCount = 0;
 		List<String> failNameList = new ArrayList<String>();
@@ -72,9 +73,19 @@ public class CompanyServiceImpl implements CompanyService {
 				failNameList.add(companyInfo.getCompanyName());
 			}
 		}
-		result.put("successInsertCount", successInsertCount);
-		result.put("failInsertCount", failInsertCount);
-		result.put("failNameList", failNameList);
+		data.put("successInsertCount", successInsertCount);
+		data.put("failInsertCount", failInsertCount);
+		data.put("failNameList", failNameList);
+		result.put("data", data);
+		if(successInsertCount == 0) {
+			result.put("success", false);
+			result.put("code", -1);
+			result.put("msg", "실패하였습니다.");
+		}else {
+			result.put("success", true);
+			result.put("code", 0);
+			result.put("msg", "성공하였습니다.");
+		}
 		return result;
 	}
 

@@ -25,11 +25,11 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.psm.api.apiserver.entity.ApiServerListEntity;
+import com.psm.api.apiserver.repository.ApiServerListRepository;
 import com.psm.api.workload.dto.WorkloadDto;
 import com.psm.api.workload.dto.WorkloadsDto;
-import com.psm.api.workload.entity.ApiServerListEntity;
 import com.psm.api.workload.entity.WorkloadEntity;
-import com.psm.api.workload.repository.ApiServerListRepository;
 import com.psm.api.workload.repository.WorkloadRepository;
 
 import lombok.extern.slf4j.Slf4j;

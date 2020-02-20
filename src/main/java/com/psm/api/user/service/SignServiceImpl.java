@@ -56,6 +56,7 @@ public class SignServiceImpl implements SignService{
 		result.put("name", user.getName());
 		result.put("emailAddr", user.getUserEmail());
 		result.put("userRole", user.getUserRoles().get(0));
+		result.put("inCompanyName", user.getCompanyIdx().getCompanyName());
 		
 		
 		return result;
