@@ -1,5 +1,12 @@
 package com.psm.api.apiserver.dto;
 
-public class InsertApiServerDto {
+import lombok.Data;
 
+@Data
+public class InsertApiServerDto {
+	String companyName;
+	String domainNameToAccessProtectServer;
+	String passwordToAccessProtectServer;
+	String userNameToAccessProtectServer;
+	String serverHost;
 }

@@ -24,7 +24,7 @@ import lombok.Data;
 
 @Entity
 @Table(name="Tbl_apiserver_list")
-//@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
+@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @DynamicUpdate
 @Data
 public class ApiServerListEntity {
@@ -45,14 +45,14 @@ public class ApiServerListEntity {
 	@Column(nullable = false)
 	private String serverHost;
 	
-	@Column(nullable = false, columnDefinition = "datetime2 default getdate()")
+	@Column(nullable = false, columnDefinition = "datetime2 default getdate()", insertable = false, updatable = false)
 	private Date createdDate;
 	
-	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'", insertable = false)
 	private String deletedYn;
 	
-	@JsonIgnore
-	@ManyToOne(optional = true, fetch = FetchType.LAZY)
+//	@JsonIgnore
+	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
 	

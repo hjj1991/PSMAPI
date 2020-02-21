@@ -57,8 +57,6 @@ public class CompanyController {
 	@ApiOperation(value = "소속회사 추가", notes = "소속회사를 추가한다")
 	@RequestMapping(value = "", method = RequestMethod.POST)
 	public SingleResult<?> insertCompany(@RequestBody List<InsertCompanyDto> insertCompanyList) {
-		System.out.println("아싸!");
-		System.out.println(insertCompanyList);
 		HashMap<String, Object> result = companyService.insertCompany(insertCompanyList);
 
 //		return responseService.getSingleResult(result);

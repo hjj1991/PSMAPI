@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.psm.api.apiserver.dto.FindApiServerDto;
+import com.psm.api.apiserver.dto.InsertApiServerDto;
+import com.psm.api.apiserver.dto.UpdateApiServerDto;
 import com.psm.api.apiserver.entity.ApiServerListEntity;
 import com.psm.api.apiserver.service.ApiServerListService;
 import com.psm.api.common.response.SingleResult;
@@ -29,15 +31,13 @@ import lombok.RequiredArgsConstructor;
 @Api(tags = { "4. ApiServer" })
 @RequiredArgsConstructor
 @RestController // 결과값을 JSON으로 출력합니다.
-@RequestMapping(value = "/v1/apiServer")
+@RequestMapping(value = "/v1/apiserver")
 public class ApiServerListController {
 
 	@Autowired
 	ApiServerListService apiServerListService;
 	@Autowired
 	ResponseService responseService;
-	@Autowired
-	CompanyService companyService;
 
 	@ApiImplicitParams({
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
@@ -45,7 +45,7 @@ public class ApiServerListController {
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public SingleResult<?> findApiServer(FindApiServerDto findApiServerDto) {
 //		responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
-		Page<ApiServerListEntity> result = apiServerListService.findApiServer(findApiServerDto);
+		HashMap<String, Object> result = apiServerListService.findApiServer(findApiServerDto);
 
 		return responseService.getSingleResult(result);
 
@@ -57,10 +57,10 @@ public class ApiServerListController {
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "Api서버 추가", notes = "Api서버 추가한다")
 	@RequestMapping(value = "", method = RequestMethod.POST)
-	public SingleResult<?> insertCompany(@RequestBody List<InsertCompanyDto> insertCompanyList) {
-		HashMap<String, Object> result = companyService.insertCompany(insertCompanyList);
+	public SingleResult<?> insertApiServer(@RequestBody List<InsertApiServerDto> insertApiServerList) {
+		HashMap<String, Object> result = apiServerListService.insertApiServer(insertApiServerList);
 
-//		return responseService.getSingleResult(result);
+
 		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("code").toString()), result.get("msg").toString(), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 
 	}
@@ -69,10 +69,9 @@ public class ApiServerListController {
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "Api서버 수정", notes = "Api서버를 수정한다.")
 	@RequestMapping(value = "", method = RequestMethod.PUT)
-	public SingleResult<?> updateCompany(@RequestBody UpdateCompanyDto updateCompanyValue) throws Exception {
-		CompanyEntity result = companyService.updateCompany(updateCompanyValue);
+	public SingleResult<?> updateApiServer(@RequestBody UpdateApiServerDto updateApiServerValue) throws Exception {
+		ApiServerListEntity result = apiServerListService.updateApiServer(updateApiServerValue);
 
-//	return responseService.getSingleResult(result);
 		return responseService.getSingleResult(result);
 
 	}
@@ -81,10 +80,9 @@ public class ApiServerListController {
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "Api서버 삭제", notes = "Api서버를 삭제한다.")
 	@RequestMapping(value = "", method = RequestMethod.DELETE)
-	public SingleResult<?> deleteCompany(@RequestBody List<String> deleteCompanyIdxList) throws Exception {
-		HashMap<String, Object> result = companyService.deleteCompany(deleteCompanyIdxList);
+	public SingleResult<?> deleteApiServer(@RequestBody List<String> deleteCompanyIdxList) throws Exception {
+		HashMap<String, Object> result = apiServerListService.deleteApiServer(deleteCompanyIdxList);
 
-//return responseService.getSingleResult(result);
 		return responseService.getSingleResult(result);
 
 	}
