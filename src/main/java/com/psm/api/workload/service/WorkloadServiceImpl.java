@@ -47,7 +47,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 	
 	public HashMap<String, Object> postWorkloadAction(String serverHost, String actionUrl) throws Exception {
 		
-		ApiServerListEntity apiserverInfo = apiServerListRepository.findByServerHost(serverHost);
+		ApiServerListEntity apiserverInfo = apiServerListRepository.findByServerHostAndDeletedYn(serverHost, "N");
 		String userNameToAccessProtectServer = apiserverInfo.getUserNameToAccessProtectServer();
 		String passwordToAccessProtectServer = apiserverInfo.getPasswordToAccessProtectServer();
 		String domainNameToAccessProtectServer = apiserverInfo.getDomainNameToAccessProtectServer();
