@@ -5,6 +5,21 @@ plugins {
 	id 'war'
 }
 
+
+apply plugin: 'war'
+
+
+    bootWar.enabled = false // (1)
+    war.enabled = true
+
+war {
+
+  baseName = 'Sample' //생성될 war 파일 이름 
+
+  version = '0.0.1'  //생성될 버전 
+
+}
+
 group = 'com.psm'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
