@@ -14,7 +14,7 @@ apply plugin: 'war'
 
 war {
 
-  baseName = 'Sample' //생성될 war 파일 이름 
+  baseName = 'ROOT' //생성될 war 파일 이름 
 
   version = '0.0.1'  //생성될 버전 
 
