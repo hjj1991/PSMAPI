@@ -32,7 +32,7 @@ public class WebMvcConfiguration implements WebMvcConfigurer{
 	        @Override
 	        public void addCorsMappings(CorsRegistry registry) {
 	            registry.addMapping("/**")
-	                    .allowedOrigins("http://10.131.109.51:3000", "http://dr.eonit.co.kr")
+	                    .allowedOrigins("http://10.131.109.51:3000", "http://dr.eonit.co.kr", "http://localhost:3000")
 	                    .allowedMethods("GET", "POST", "OPTIONS", "PUT")
 	                    .allowCredentials(false)
 	                    .maxAge(3600);

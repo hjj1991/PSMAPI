@@ -97,7 +97,8 @@ public class ApiServerListServiceImpl implements ApiServerListService {
 			//중복 IP가 존재하지 않아여야함.
 			if(apiServerListRepository.findByServerHost(apiServerInfo.getServerHost()) == null){
 				insertApiServer.setCompanyIdx(companyRepository.findByCompanyName(apiServerInfo.getCompanyName()));
-				insertApiServer.setDomainNameToAccessProtectServer(apiServerInfo.getDomainNameToAccessProtectServer());
+//				insertApiServer.setDomainNameToAccessProtectServer(apiServerInfo.getDomainNameToAccessProtectServer());
+				insertApiServer.setDomainNameToAccessProtectServer("platespin");
 				insertApiServer.setPasswordToAccessProtectServer(apiServerInfo.getPasswordToAccessProtectServer());
 				insertApiServer.setServerHost(apiServerInfo.getServerHost());
 				insertApiServer.setUserNameToAccessProtectServer(apiServerInfo.getUserNameToAccessProtectServer());

@@ -41,7 +41,7 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 
-@Api(tags = { "1. Member" })
+@Api(tags = { "1. User" })
 @RequiredArgsConstructor
 @RestController // 결과값을 JSON으로 출력합니다.
 @RequestMapping(value = "/v1")
