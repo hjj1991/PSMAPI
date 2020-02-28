@@ -68,7 +68,7 @@ public class SignServiceImpl implements SignService{
 		HashMap<String, String> result = new HashMap<String, String>();
 		if(jwtTokenProvider.validateRefreshToken(refreshToken)) {	//리프레쉬 토큰 검증 후 토큰 디코딩하여 정보가져옴
 			jwtUserId = Jwts.parser().setSigningKey(secretKey.getBytes("UTF-8")).parseClaimsJws(refreshToken).getBody().getSubject();
-			tokenRepository.deleteById(jwtUserId);
+			tokenRepository.deleteByUserId(jwtUserId);
 			result.put("code",  "0");
 			result.put("msg", "로그아웃되었습니다.");
 			result.put("success", "true");
@@ -86,6 +86,7 @@ public class SignServiceImpl implements SignService{
 	
 	@Override
 	public HashMap<String, Object> tokenReissue(String refreshToken) throws Exception {
+		System.out.println("하이하이!!!");
 		List<String> jwtRoles =  new ArrayList<String>();
 		String jwtUserId = null;
 		HashMap<String, Object> result = new HashMap<String, Object>();
@@ -93,6 +94,7 @@ public class SignServiceImpl implements SignService{
 		HashMap<String, Object> data = new HashMap<String, Object>();
 		List<String> tokenInfo = new ArrayList<String>();
 		if(jwtTokenProvider.validateRefreshToken(refreshToken)) {	//리프레쉬 토큰 검증 후 토큰 디코딩하여 정보가져옴
+			System.out.println("하이하이!!!");
 			TokenEntity tokenEntity = tokenRepository.findByRefreshToken(refreshToken);
 			jwtRoles.add(Jwts.parser().setSigningKey(secretKey.getBytes("UTF-8")).parseClaimsJws(refreshToken).getBody().get("roles").toString().replace("[", "").replace("]", ""));
 			jwtUserId = Jwts.parser().setSigningKey(secretKey.getBytes("UTF-8")).parseClaimsJws(refreshToken).getBody().getSubject();

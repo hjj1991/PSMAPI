@@ -21,12 +21,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.psm.api.apiserver.dto.FindApiServerDto;
 import com.psm.api.common.exception.CUserNotFoundException;
 import com.psm.api.common.response.CommonResult;
 import com.psm.api.common.response.SingleResult;
 import com.psm.api.common.response.service.ResponseService;
 import com.psm.api.company.repository.CompanyRepository;
 import com.psm.api.configuration.security.JwtTokenProvider;
+import com.psm.api.user.dto.FindUserDto;
 import com.psm.api.user.dto.UserDetailDto;
 import com.psm.api.user.dto.UserLoginDto;
 import com.psm.api.user.dto.UserSignUpDto;
@@ -69,11 +71,24 @@ public class UserController {
 	@ApiOperation(value = "회원 단건 조회", notes = "userId로 회원을 조회한다")
 	@RequestMapping(value = "/user", method = RequestMethod.GET)
 	public SingleResult<UserDetailDto> findUserById(@RequestHeader("X_AUTH_TOKEN") String authToken) {
-		System.out.println("ㅎㅇㅎㅇ");
-		System.out.println("크앜");
 		// 결과데이터가 단일건인경우 getBasicResult를 이용해서 결과를 출력한다.
-		
-		return responseService.getSingleResult(userService.getUserDetail(userRepository.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
+
+		return responseService.getSingleResult(userService.getUserDetail(userRepository
+				.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
+	}
+
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
+	@ApiOperation(value = "사용자 조회", notes = "사용자를 조회한다")
+	@RequestMapping(value = "/user/list", method = RequestMethod.GET)
+	public SingleResult<?> findUser(FindUserDto findUserDto, @RequestHeader("X_AUTH_TOKEN") String authToken) throws Exception {
+//	responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
+		HashMap<String, Object> result = userService.findUser(findUserDto, authToken);
+
+		return responseService.getSingleResult(result);
+
+//	return responseService.getSingleResult(userService.getUserDetail(userRepository
+//			.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
 	}
 
 	@ApiOperation(value = "로그인", notes = "아이디로 로그인을 한다.")
@@ -83,21 +98,22 @@ public class UserController {
 
 		return responseService.getSingleResult(result);
 	}
-	
+
 	@ApiOperation(value = "로그아웃", notes = "로그아웃을 한다.")
 	@PostMapping(value = "/signout")
 	public SingleResult<?> signout(@RequestHeader("X_REFRESH_TOKEN") String refreshToken) throws Exception {
-		
+
 		HashMap<String, String> result = signService.signOut(refreshToken);
-		return responseService.getNotDataSingleResult(Integer.parseInt(result.get("code")), result.get("msg"), Boolean.valueOf(result.get("success")).booleanValue());
+		return responseService.getNotDataSingleResult(Integer.parseInt(result.get("code")), result.get("msg"),
+				Boolean.valueOf(result.get("success")).booleanValue());
 	}
-	
 
 	@ApiOperation(value = "Access토큰 재발급", notes = "refreshToken을 이용하여 accessToken 재발급")
 	@PostMapping(value = "/tokenreissue")
 	public SingleResult<?> tokenReissue(@RequestBody Map<String, Object> param) throws Exception {
 		HashMap<String, Object> result = signService.tokenReissue((String) param.get("refreshToken"));
-		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
+		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()),
+				(String) result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 	}
 
 	@ApiOperation(value = "가입", notes = "회원가입을 한다.")

@@ -26,6 +26,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.company.entity.CompanyEntity;
@@ -51,7 +52,7 @@ public class UserEntity implements UserDetails  {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private int userIdx;
 	
-	@ManyToOne(optional = true, fetch = FetchType.LAZY)
+	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
 	
@@ -61,7 +62,9 @@ public class UserEntity implements UserDetails  {
 	@Column(nullable = false, length = 60)
 	private String name;
 	
+	
 	@Column(nullable = false, length = 100)
+	@JsonIgnore
 	private String userPw;
 	
 	@Column(nullable = false, length = 20)
@@ -85,6 +88,7 @@ public class UserEntity implements UserDetails  {
 	private List<String> userRoles = new ArrayList<>();
 
 	@Override
+	@JsonIgnore
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		return this.userRoles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 	}
@@ -120,6 +124,7 @@ public class UserEntity implements UserDetails  {
 	}
 
 	@Override
+	@JsonIgnore
 	public String getPassword() {
 		// TODO Auto-generated method stub
 		return this.userPw;

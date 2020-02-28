@@ -1,10 +1,13 @@
 package com.psm.api.configuration.security;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -40,7 +43,7 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 	@Value("spring.jwt.secret")
 	private String secretKey;
 
-	private long tokenValidMilisecond = 1000L * 30 * 20; // 30분만 토큰 유효
+	private long tokenValidMilisecond = 1000L * 60 * 20; // 30분만 토큰 유효
 	private long refreshTokenValidMilisecond = 1000L * 60 * 1440 * 14; // 2주간 토큰 유효
 
 	private final UserDetailsService userDetailsService;
@@ -90,9 +93,17 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 		
 		if(tokenRepository.existsByUserId(userPk)) {
 			TokenEntity updateTokenEntity = tokenRepository.findByUserId(userPk);
-			updateTokenEntity.setExpiredDatetime(expiredDate);
-			updateTokenEntity.setRefreshToken(refreshToken);
-			tokenRepository.save(updateTokenEntity);
+			Calendar cal = Calendar.getInstance();
+			Date currentExpiredDate = updateTokenEntity.getExpiredDatetime();
+			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+			
+			cal.setTime(new Date());
+			cal.add(Calendar.DATE, -2);
+			if(df.format(currentExpiredDate).compareTo(df.format(cal.getTime())) < 0) {
+				updateTokenEntity.setExpiredDatetime(expiredDate);
+				updateTokenEntity.setRefreshToken(refreshToken);
+				tokenRepository.save(updateTokenEntity);	
+			}
 		}else {
 			TokenEntity tokenEntity = new TokenEntity();
 			tokenEntity.setUserId(userPk);
@@ -101,7 +112,6 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 			tokenEntity.setExpiredDatetime(expiredDate);
 			tokenRepository.save(tokenEntity);
 		}
-
 		
 		return refreshToken;
 	}

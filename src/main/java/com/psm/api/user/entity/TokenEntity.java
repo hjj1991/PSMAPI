@@ -21,7 +21,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class TokenEntity {
+	
 	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name = "token_idx")
+	private int tokenIdx;
+	
+	@Column(nullable = false, unique = true, length = 60)
 	private String userId;
 	
 	@Column(nullable=false)
