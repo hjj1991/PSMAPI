@@ -36,7 +36,7 @@
 	<logger name="jdbc.sqlonly" level="INFO" appender-ref="console-infolog"/>
 	<logger name="jdbc.resultsettable" level="INFO" appender-ref="console-infolog"/>
 	<!-- 루트 로거 -->
-	<root level="DEBUG">
+	<root level="on">
 		<appender-ref ref="FILE" />
 		<appender-ref ref="console"/>
 	</root>

@@ -1,7 +1,9 @@
 package com.psm.api.workload.entity;
 
+import java.util.Collection;
 import java.util.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -10,11 +12,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.DynamicUpdate;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.company.entity.CompanyEntity;
 
@@ -37,6 +41,14 @@ public class WorkloadEntity {
 	@ManyToOne(optional = true, fetch = FetchType.LAZY)
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
+	
+	@Column(nullable = false)
+	private String serverHost;
+	
+	
+	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+	@JoinColumn(name="workloadId", referencedColumnName = "workloadId", nullable = true)
+	private Collection<AvailableActionEntity> availableActionList;
 	
 	@Column(nullable = false)
 	private String targetId;
@@ -71,7 +83,7 @@ public class WorkloadEntity {
 	@Column(nullable = false)
 	private String discoveryAddress;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String areBBTollsInstalled;
 	
 	@Column(nullable = true)

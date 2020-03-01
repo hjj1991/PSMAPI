@@ -1,7 +1,7 @@
-package com.psm.api.workload.service;
+package com.psm.api;
 
-import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,16 +14,16 @@ import org.apache.http.auth.NTCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.psm.api.apiserver.entity.ApiServerListEntity;
 import com.psm.api.apiserver.repository.ApiServerListRepository;
@@ -34,12 +34,8 @@ import com.psm.api.workload.entity.WorkloadEntity;
 import com.psm.api.workload.repository.AvailableActionRepository;
 import com.psm.api.workload.repository.WorkloadRepository;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
-@Service
-//@Transactional
-public class WorkloadServiceImpl implements WorkloadService {
+@Component
+public class CronTable {
 	
 	@Autowired
 	WorkloadRepository workloadRepository;
@@ -48,70 +44,13 @@ public class WorkloadServiceImpl implements WorkloadService {
 	
 	@Autowired
 	ApiServerListRepository apiServerListRepository;
-	
-	public HashMap<String, Object> postWorkloadAction(String serverHost, String actionUrl) throws Exception {
-		
-		ApiServerListEntity apiserverInfo = apiServerListRepository.findByServerHostAndDeletedYn(serverHost, "N");
-		String userNameToAccessProtectServer = apiserverInfo.getUserNameToAccessProtectServer();
-		String passwordToAccessProtectServer = apiserverInfo.getPasswordToAccessProtectServer();
-		String domainNameToAccessProtectServer = apiserverInfo.getDomainNameToAccessProtectServer();
-		ObjectMapper mapper = new ObjectMapper();
-		
-		HashMap<String, String> list = new HashMap<String,String>();
-		HashMap<String, Object> result = new HashMap<String, Object>();
-		
-		CloseableHttpClient httpClient = HttpClients.createDefault();
-		HttpPost httpPost = new HttpPost(actionUrl);
-		HttpHost target = new HttpHost(serverHost, 80, "http");
-		
-		CredentialsProvider credsProvider = new BasicCredentialsProvider();
-		credsProvider.setCredentials(AuthScope.ANY, new NTCredentials(userNameToAccessProtectServer,
-				passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost));
-		
 
-		// Make sure the same context is used to execute logically related requests
-		HttpClientContext context = HttpClientContext.create();
-		context.setCredentialsProvider(credsProvider);
-		
-		// Execute a cheap method first. This will trigger NTLM authentication
-		httpPost.addHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
-		CloseableHttpResponse response = null;
-		
-		
-	    try {
-	    	response = httpClient.execute(target, httpPost, context);
-	    	System.out.println(response.getStatusLine());
-	    	if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-	    		result.put("success", true);
-	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
-		    	System.out.println(list);
-	    	}else {
-	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
-	    		result.put("success", false);
-	    	}
-	    	
-	        
-	    } 
-	    catch (IOException e) {
-	        e.printStackTrace();
-	    }
+    // 애플리케이션 시작 후 60초 후에 첫 실행, 그 후 매 60초마다 주기적으로 실행한다.
+    @Scheduled(initialDelay = 60000, fixedDelay = 60000)
+    @Transactional
+    public void workloadSync() {
 
-		
-		result.put("status", "200");
-		result.put("data", list);
-		result.put("resultMsg", "api서버정보가 없습니다.");	
-
-		
-		return result;
-		
-	}
-	
-	
-	//전체 워크로드를 조회한다.
-	@SuppressWarnings("null")
-	@Override
-	public HashMap<String, Object> getWorkloadList() throws Exception {
-		
+        // 실행될 로직
 		List<ApiServerListEntity> apiserverList = apiServerListRepository.findAll();
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		WorkloadsDto lastWorkloadsList = new WorkloadsDto();
@@ -119,7 +58,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 		
 		//액션테이블 비우기
 		availableActionRepository.deleteAllInBatch();
-//		availableActionRepository.resetIdAvailableActionTable();
+		availableActionRepository.resetIdAvailableActionTable();
 		
 		for(ApiServerListEntity apiserverInfo: apiserverList) {
 			/* 해당 API서버가 삭제되었거나 소속 회사가 삭제된 경우 시행하지 않음 */
@@ -135,7 +74,13 @@ public class WorkloadServiceImpl implements WorkloadService {
 			
 			WorkloadsDto tmpWorkloadList = null;
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd a KK:mm:ss");
-			URI startingUri = new URI("/protectionservices/Workloads/");
+			URI startingUri = null;
+			try {
+				startingUri = new URI("/protectionservices/Workloads/");
+			} catch (URISyntaxException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			CloseableHttpClient httpClient = HttpClients.createDefault();
 			CredentialsProvider credsProvider = new BasicCredentialsProvider();
 			credsProvider.setCredentials(AuthScope.ANY, new NTCredentials(userNameToAccessProtectServer,
@@ -157,16 +102,32 @@ public class WorkloadServiceImpl implements WorkloadService {
 						HttpGet httpget2 = new HttpGet(tmpWorkloadList.getWorkloads().get(i).getUri());
 						httpget2.addHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
 						CloseableHttpResponse response2 = httpClient.execute(target, httpget2, context);
+						System.out.println("흐아아!2!");
 						if(response2.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 							tmpWorkloadList.getWorkloads().set(i, mapper.readValue(EntityUtils.toString(response2.getEntity(),"UTF-8"), WorkloadDto.class));
 							tmpWorkloadList.getWorkloads().get(i).setCompanyName(apiserverInfo.getCompanyIdx().getCompanyName());
 							tmpWorkloadList.getWorkloads().get(i).setWorkloadServerHost(serverHost);
 							String workloadId = tmpWorkloadList.getWorkloads().get(i).getUri().substring(tmpWorkloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1);
+							System.out.println("흐아아!!");
+							System.out.println(workloadId);
+							System.out.println(workloadRepository.findByWorkloadId("123"));
+							System.out.println("왜안돼");
+							try {
+								System.out.println(workloadRepository.findByWorkloadId(workloadId));
+							} catch (Exception e) {
+								// TODO: handle exception
+								e.printStackTrace();
+								System.out.println("호호호");
+							}
+							
+							System.out.println("켁");
 							//기존 워크로드ID가 존재하면 업데이트한다.
 							if(workloadRepository.findByWorkloadId(workloadId) != null){							
 								//기존 워크로드 ID로 조회하여 가능한 액션 전부삭제
 //								availableActionRepository.deleteInBatch(availableActionRepository.findByWorkloadId(workloadId));
-							
+							System.out.println("하이");
+							System.out.println(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size());
+							System.out.println("하이");
 								//사용가능한 워크로드 액션들을 insert한다.
 								for(int availableCount = 0; availableCount < tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size(); availableCount++) {
 									AvailableActionEntity tempAvailableActionEntity = new AvailableActionEntity();
@@ -226,6 +187,10 @@ public class WorkloadServiceImpl implements WorkloadService {
 								workloadEntity.setCompanyIdx(apiserverInfo.getCompanyIdx());
 								workloadRepository.save(workloadEntity);
 							}else { //기존 워크로드ID가 존재하지 않으면 새로 insert
+								
+								System.out.println("하이2");
+								System.out.println(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size());
+								System.out.println("하이2");
 								
 								//사용가능한 워크로드 액션들을 insert한다.
 								for(int availableCount = 0; availableCount < tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size(); availableCount++) {
@@ -288,7 +253,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 						}else {	//워크로드 정보불러오기 실패시
 							
 						}
-						workloadList.add(tmpWorkloadList.getWorkloads().get(i));
+//						workloadList.add(tmpWorkloadList.getWorkloads().get(i));
 					}	
 					
 					//워크로드 동기화 성공시
@@ -296,10 +261,10 @@ public class WorkloadServiceImpl implements WorkloadService {
 //					result.put("data", tmpWorkloadList);
 //					return result;
 				}else {	//워크로드 리스트 정보 불러오기 실패시
-					result.put("status", "-2");
-					result.put("data", null);
-					result.put("resultMsg", "접속실패 responseCode:" + response1.getStatusLine().getStatusCode());
-					return result;
+//					result.put("status", "-2");
+//					result.put("data", null);
+//					result.put("resultMsg", "접속실패 responseCode:" + response1.getStatusLine().getStatusCode());
+//					return result;
 				}
 
 			}catch (Exception e) {
@@ -307,11 +272,6 @@ public class WorkloadServiceImpl implements WorkloadService {
 			}
 			
 		}
-//		System.out.println(lastWorkloadList.getWorkloads());
-		lastWorkloadsList.setWorkloads(workloadList);
-		result.put("status", "200");
-		result.put("data", lastWorkloadsList);
-		result.put("resultMsg", "api서버정보가 없습니다.");	
-		return result;
 	}
+    
 }
