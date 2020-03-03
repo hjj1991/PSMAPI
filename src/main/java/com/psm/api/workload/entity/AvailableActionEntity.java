@@ -22,7 +22,7 @@ public class AvailableActionEntity {
 	
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	private long idx;
+	private int idx;
 	
 	@Column(nullable = false)
 	private String workloadId;

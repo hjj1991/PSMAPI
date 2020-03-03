@@ -2,6 +2,7 @@ package com.psm.api.workload.entity;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -22,14 +23,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.company.entity.CompanyEntity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name="Tbl_workload")
+@NoArgsConstructor
+@AllArgsConstructor
 @DynamicUpdate
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @Data
-public class WorkloadEntity {
+public class WorkloadEntity  {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(name = "workload_idx")
@@ -45,42 +50,42 @@ public class WorkloadEntity {
 	@Column(nullable = false)
 	private String serverHost;
 	
-	
+	@JsonIgnore
 	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
 	@JoinColumn(name="workloadId", referencedColumnName = "workloadId", nullable = true)
 	private Collection<AvailableActionEntity> availableActionList;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String targetId;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String currentState;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String machineName;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String name;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String online;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String operatingSystem;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String operatingSystemVersion;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String servicePack;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String sourceMachinId;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String userName;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String discoveryAddress;
 	
 	@Column(nullable = true)
@@ -89,88 +94,88 @@ public class WorkloadEntity {
 	@Column(nullable = true)
 	private String readyToCopySnapshotName;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String canDeleteVm;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String canRemoveSource;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String canRemoveBBT;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String runFailoverOnReplicationSuccess;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String isRemoteWorkload;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String isWindowsCluster;
 	
-	@Column(nullable = false, columnDefinition = "datetime2")
+	@Column(nullable = true, columnDefinition = "datetime2")
 	private Date lastFullOn;
 	
-	@Column(nullable = false, columnDefinition = "datetime2")
+	@Column(nullable = true, columnDefinition = "datetime2")
 	private Date lastIncrementalOn;
 	
-	@Column(nullable = false, columnDefinition = "datetime2")
+	@Column(nullable = true, columnDefinition = "datetime2")
 	private Date lastTestedFailoverOn;
 	
-	@Column(nullable = false, columnDefinition = "datetime2")
+	@Column(nullable = true, columnDefinition = "datetime2")
 	private Date lastUpdated;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String failoverMachineId;
 	
-	@Column(nullable = false, columnDefinition = "varchar(255) default ''")
+	@Column(nullable = true, columnDefinition = "varchar(255) default ''")
 	private String nextFullOn;
 	
-	@Column(nullable = false, columnDefinition = "varchar(255) default ''")
+	@Column(nullable = true, columnDefinition = "varchar(255) default ''")
 	private String nextIncrementalOn;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String onlineStatus;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String protectionLevel;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String protectionState;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String targetPRO;
 	
 	@Column(nullable = true)
 	private String workflowStep;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String workloadLifecycle;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String workloadGroupId;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String replicationScheduleStatus;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String sourceMachineControllerAlias;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String prepareForFailoverConfigurationUri;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String scheduleActive;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String schedulesUri;
 	
-	@Column(nullable = false, columnDefinition = "varchar(100) default ''")
+	@Column(nullable = true, columnDefinition = "varchar(100) default ''")
 	private String tag;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String testCutoverMarkedSuccessful;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String testFailoverConfigurationUri;
 	
 	@Column(nullable = true)
@@ -179,7 +184,7 @@ public class WorkloadEntity {
 	@Column(nullable = true)
 	private String windowsServiceUri;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String workloadConfigurationUri;
 	
 }

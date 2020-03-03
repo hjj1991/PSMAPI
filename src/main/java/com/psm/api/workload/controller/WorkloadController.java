@@ -7,11 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.psm.api.common.response.SingleResult;
 import com.psm.api.common.response.service.ResponseService;
+import com.psm.api.user.dto.FindUserDto;
+import com.psm.api.workload.dto.FindWorkloadDto;
 import com.psm.api.workload.dto.WorkloadsDto;
 import com.psm.api.workload.service.WorkloadService;
 
@@ -34,13 +37,13 @@ public class WorkloadController {
 	private ResponseService responseService;
 
 	@ApiImplicitParams({
-		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = false, dataType = "String", paramType = "header") })
+		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "워크로드 조회", notes = "모든 워크로드를 조회한다")
 	@GetMapping(value = "/workload")
-	public SingleResult<WorkloadsDto> getWorkloadList() throws Exception {
+	public SingleResult<WorkloadsDto> getWorkloadList(FindWorkloadDto findWorkloadDto, @RequestHeader("X_AUTH_TOKEN") String authToken) throws Exception {
 		// 결과데이터가 여러건인경우 getListResult를 이용해서 결과를 출력한다.
 		HashMap<String, Object> result = new HashMap<>();
-		result = workloadService.getWorkloadList();
+		result = workloadService.getWorkloadList(findWorkloadDto, authToken);
 		if(result.get("status") == "200") {
 			return responseService.getSingleResult((WorkloadsDto)result.get("data"));
 		}else {
@@ -50,7 +53,7 @@ public class WorkloadController {
 	}
 
 	@ApiImplicitParams({
-		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = false, dataType = "String", paramType = "header") })
+		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "워크로드 액션", notes = "워크로드 액션진행")
 	@PostMapping(value = "/workload/action")
 	public SingleResult<?> postWorkloadAction(@RequestBody Map<String, String> param) throws Exception {
