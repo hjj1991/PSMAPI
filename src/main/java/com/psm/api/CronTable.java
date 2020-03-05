@@ -52,9 +52,9 @@ public class CronTable {
 
         // 실행될 로직
 		List<ApiServerListEntity> apiserverList = apiServerListRepository.findAll();
-		HashMap<String, Object> result = new HashMap<String, Object>();
-		WorkloadsDto lastWorkloadsList = new WorkloadsDto();
-		List<WorkloadDto> workloadList = new ArrayList<WorkloadDto>();
+//		HashMap<String, Object> result = new HashMap<String, Object>();
+//		WorkloadsDto lastWorkloadsList = new WorkloadsDto();
+//		List<WorkloadDto> workloadList = new ArrayList<WorkloadDto>();
 		
 		//액션테이블 비우기
 		availableActionRepository.deleteAllInBatch();
@@ -114,6 +114,7 @@ public class CronTable {
 							System.out.println("왜안돼");
 							try {
 								System.out.println(workloadRepository.findByWorkloadId(workloadId));
+								System.out.println("크앙크앙!");
 							} catch (Exception e) {
 								// TODO: handle exception
 								e.printStackTrace();
@@ -167,14 +168,14 @@ public class CronTable {
 								workloadEntity.setNextFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(15).get("Value"));
 								workloadEntity.setNextIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(16).get("Value"));
 								workloadEntity.setOnlineStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(17).get("Value"));
-								workloadEntity.setProtectionLevel(tmpWorkloadList.getWorkloads().get(i).getParameters().get(18).get("Value"));
-								workloadEntity.setProtectionState(tmpWorkloadList.getWorkloads().get(i).getParameters().get(19).get("Value"));
-								workloadEntity.setTargetPRO(tmpWorkloadList.getWorkloads().get(i).getParameters().get(20).get("Value"));
-								workloadEntity.setWorkflowStep(tmpWorkloadList.getWorkloads().get(i).getParameters().get(21).get("Value"));
-								workloadEntity.setWorkloadLifecycle(tmpWorkloadList.getWorkloads().get(i).getParameters().get(22).get("Value"));
-								workloadEntity.setWorkloadGroupId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(23).get("Value"));
-								workloadEntity.setReplicationScheduleStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(24).get("Value"));
-								workloadEntity.setSourceMachineControllerAlias(tmpWorkloadList.getWorkloads().get(i).getParameters().get(25).get("Value"));
+								workloadEntity.setProtectionLevel(tmpWorkloadList.getWorkloads().get(i).getParameters().get(22).get("Value"));
+								workloadEntity.setProtectionState(tmpWorkloadList.getWorkloads().get(i).getParameters().get(23).get("Value"));
+								workloadEntity.setTargetPRO(tmpWorkloadList.getWorkloads().get(i).getParameters().get(24).get("Value"));
+								workloadEntity.setWorkflowStep(tmpWorkloadList.getWorkloads().get(i).getParameters().get(25).get("Value"));
+								workloadEntity.setWorkloadLifecycle(tmpWorkloadList.getWorkloads().get(i).getParameters().get(26).get("Value"));
+								workloadEntity.setWorkloadGroupId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(27).get("Value"));
+								workloadEntity.setReplicationScheduleStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(28).get("Value"));
+								workloadEntity.setSourceMachineControllerAlias(tmpWorkloadList.getWorkloads().get(i).getParameters().get(29).get("Value"));
 								workloadEntity.setPrepareForFailoverConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getPrepareForFailoverConfigurationUri());
 								workloadEntity.setScheduleActive(tmpWorkloadList.getWorkloads().get(i).getScheduleActive());
 								workloadEntity.setSchedulesUri(tmpWorkloadList.getWorkloads().get(i).getSchedulesUri());
@@ -230,14 +231,14 @@ public class CronTable {
 								workloadEntity.setNextFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(15).get("Value"));
 								workloadEntity.setNextIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(16).get("Value"));
 								workloadEntity.setOnlineStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(17).get("Value"));
-								workloadEntity.setProtectionLevel(tmpWorkloadList.getWorkloads().get(i).getParameters().get(18).get("Value"));
-								workloadEntity.setProtectionState(tmpWorkloadList.getWorkloads().get(i).getParameters().get(19).get("Value"));
-								workloadEntity.setTargetPRO(tmpWorkloadList.getWorkloads().get(i).getParameters().get(20).get("Value"));
-								workloadEntity.setWorkflowStep(tmpWorkloadList.getWorkloads().get(i).getParameters().get(21).get("Value"));
-								workloadEntity.setWorkloadLifecycle(tmpWorkloadList.getWorkloads().get(i).getParameters().get(22).get("Value"));
-								workloadEntity.setWorkloadGroupId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(23).get("Value"));
-								workloadEntity.setReplicationScheduleStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(24).get("Value"));
-								workloadEntity.setSourceMachineControllerAlias(tmpWorkloadList.getWorkloads().get(i).getParameters().get(25).get("Value"));
+								workloadEntity.setProtectionLevel(tmpWorkloadList.getWorkloads().get(i).getParameters().get(22).get("Value"));
+								workloadEntity.setProtectionState(tmpWorkloadList.getWorkloads().get(i).getParameters().get(23).get("Value"));
+								workloadEntity.setTargetPRO(tmpWorkloadList.getWorkloads().get(i).getParameters().get(24).get("Value"));
+								workloadEntity.setWorkflowStep(tmpWorkloadList.getWorkloads().get(i).getParameters().get(25).get("Value"));
+								workloadEntity.setWorkloadLifecycle(tmpWorkloadList.getWorkloads().get(i).getParameters().get(26).get("Value"));
+								workloadEntity.setWorkloadGroupId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(27).get("Value"));
+								workloadEntity.setReplicationScheduleStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(28).get("Value"));
+								workloadEntity.setSourceMachineControllerAlias(tmpWorkloadList.getWorkloads().get(i).getParameters().get(29).get("Value"));
 								workloadEntity.setPrepareForFailoverConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getPrepareForFailoverConfigurationUri());
 								workloadEntity.setScheduleActive(tmpWorkloadList.getWorkloads().get(i).getScheduleActive());
 								workloadEntity.setSchedulesUri(tmpWorkloadList.getWorkloads().get(i).getSchedulesUri());

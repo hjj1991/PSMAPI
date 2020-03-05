@@ -22,10 +22,14 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.company.entity.CompanyEntity;
+import com.psm.api.workload.dto.ResponseWorkloadListDto;
+import com.psm.api.workload.entity.AvailableActionEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name="Tbl_workload")
@@ -33,8 +37,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @DynamicUpdate
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
-@Data
-public class WorkloadEntity  {
+@Getter
+@Setter
+public class WorkloadEntity extends ResponseWorkloadListDto {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(name = "workload_idx")
@@ -50,10 +55,10 @@ public class WorkloadEntity  {
 	@Column(nullable = false)
 	private String serverHost;
 	
-	@JsonIgnore
-	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-	@JoinColumn(name="workloadId", referencedColumnName = "workloadId", nullable = true)
-	private Collection<AvailableActionEntity> availableActionList;
+//	@JsonIgnore
+//	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+//	@JoinColumn(name="workloadId", referencedColumnName = "workloadId", nullable = true)
+//	private Collection<AvailableActionEntity> availableActionList;
 	
 	@Column(nullable = true)
 	private String targetId;

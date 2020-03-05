@@ -5,7 +5,9 @@ import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -36,6 +38,7 @@ import com.psm.api.common.exception.CUserNotFoundException;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.user.repository.UserRepository;
 import com.psm.api.workload.dto.FindWorkloadDto;
+import com.psm.api.workload.dto.ResponseWorkloadListDto;
 import com.psm.api.workload.dto.WorkloadDto;
 import com.psm.api.workload.dto.WorkloadsDto;
 import com.psm.api.workload.entity.AvailableActionEntity;
@@ -97,10 +100,16 @@ public class WorkloadServiceImpl implements WorkloadService {
 	    	if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 	    		result.put("success", true);
 	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
+	    		result.put("status", "200");
+	    		result.put("data", list);
+	    		result.put("resultMsg", "성공하였습니다.");	
 		    	System.out.println(list);
 	    	}else {
 	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
 	    		result.put("success", false);
+	    		result.put("status", "200");
+	    		result.put("data", list);
+	    		result.put("resultMsg", "실패하였습니다.");	
 	    	}
 	    	
 	        
@@ -110,9 +119,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 	    }
 
 		
-		result.put("status", "200");
-		result.put("data", list);
-		result.put("resultMsg", "api서버정보가 없습니다.");	
+
+		
 
 		
 		return result;
@@ -145,31 +153,37 @@ public class WorkloadServiceImpl implements WorkloadService {
 				String keyword = findWorkloadDto.getFindKeyword();
 				if(target.equals("companyName")) {
 					data = workloadRepository.findByCompanyIdx_CompanyNameLike("%" + keyword + "%", pageRequest);
+					//워크로드ID로 사용가능한 액션목록을 조회한뒤 세팅한다.
+					for(WorkloadEntity workload : data) {
+						workload.setAvailableActionList(availableActionRepository.findByWorkloadId(workload.getWorkloadId()));
+					}
 				}else {
 					data = workloadRepository.findAll(pageRequest);
+					//워크로드ID로 사용가능한 액션목록을 조회한뒤 세팅한다.
+					for(WorkloadEntity workload : data) {
+						workload.setAvailableActionList(availableActionRepository.findByWorkloadId(workload.getWorkloadId()));
+					}
 				}
-			}else {
-				System.out.println("야호");
-				try {
-					System.out.println(workloadRepository.findAll(pageRequest));
-				} catch (Exception e) {
-					System.out.println("켁");
-					e.printStackTrace();
-				}
-				
-				System.out.println("야호3");
+			}else {	
 				data = workloadRepository.findAll(pageRequest);
-				System.out.println("야호2");
+				//워크로드ID로 사용가능한 액션목록을 조회한뒤 세팅한다.
+				for(WorkloadEntity workload : data) {
+					workload.setAvailableActionList(availableActionRepository.findByWorkloadId(workload.getWorkloadId()));
+				}
 			}
 		}else {
-				data = workloadRepository.findByCompanyIdx_CompanyIdx(companyIdx, pageRequest);		
+				data = workloadRepository.findByCompanyIdx_CompanyIdx(companyIdx, pageRequest);
+				//워크로드ID로 사용가능한 액션목록을 조회한뒤 세팅한다.
+				for(WorkloadEntity workload : data) {
+					workload.setAvailableActionList(availableActionRepository.findByWorkloadId(workload.getWorkloadId()));
+				}
 		}
 		
 		
 
 		result.put("status", "200");
 		result.put("data", data);
-		result.put("resultMsg", "api서버정보가 없습니다.");	
+		result.put("resultMsg", "정상조회되었습니다.");	
 		return result;
 	}
 }

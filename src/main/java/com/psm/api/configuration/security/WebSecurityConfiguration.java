@@ -38,7 +38,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 				.cors()
 				.and().authorizeRequests() // 다음 리퀘스트에 대한 사용권한 체크
 				.requestMatchers(CorsUtils::isPreFlightRequest).permitAll()				
-				.antMatchers("/v1/signin", "/v1/signout", "/v1/tokenreissue").permitAll() // 가입 및 인증 주소는 누구나 접근가능
+				.antMatchers("/v1/signin", "/v1/signout", "/v1/signup", "/v1/tokenreissue").permitAll() // 가입 및 인증 주소는 누구나 접근가능
 //				.antMatchers("/v1/*").hasRole("MASTER")
 //				.antMatchers(HttpMethod.POST, "/v1/*").permitAll() // 가입 및 인증 주소는 누구나 접근가능
 //				.antMatchers(HttpMethod.GET, "/v1/*").permitAll() // hellowworld로 시작하는 GET요청 리소스는 누구나 접근가능

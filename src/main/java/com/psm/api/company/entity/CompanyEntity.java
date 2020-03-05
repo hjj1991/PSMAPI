@@ -14,9 +14,7 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.DynamicUpdate;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.psm.api.apiserver.entity.ApiServerListEntity;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.workload.entity.WorkloadEntity;

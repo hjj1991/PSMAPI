@@ -16,7 +16,7 @@
         <file>${LOG_PATH_NAME}</file>
         <!-- 일자별로 로그파일 적용하기 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH_NAME}.%d{yyyyMMdd}</fileNamePattern>
+            <fileNamePattern>${LOG_PATH_NAME}.%d{yyyyMMdd}.log</fileNamePattern>
             <maxHistory>60</maxHistory> <!-- 일자별 백업파일의 보관기간 -->
         </rollingPolicy>
         <encoder>

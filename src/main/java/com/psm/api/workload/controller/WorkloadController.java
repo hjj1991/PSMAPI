@@ -40,12 +40,14 @@ public class WorkloadController {
 		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "워크로드 조회", notes = "모든 워크로드를 조회한다")
 	@GetMapping(value = "/workload")
-	public SingleResult<WorkloadsDto> getWorkloadList(FindWorkloadDto findWorkloadDto, @RequestHeader("X_AUTH_TOKEN") String authToken) throws Exception {
+	public SingleResult<?> getWorkloadList(FindWorkloadDto findWorkloadDto, @RequestHeader("X_AUTH_TOKEN") String authToken) throws Exception {
 		// 결과데이터가 여러건인경우 getListResult를 이용해서 결과를 출력한다.
+		System.out.println(findWorkloadDto);
+		System.out.println("안녕");
 		HashMap<String, Object> result = new HashMap<>();
 		result = workloadService.getWorkloadList(findWorkloadDto, authToken);
 		if(result.get("status") == "200") {
-			return responseService.getSingleResult((WorkloadsDto)result.get("data"));
+			return responseService.getSingleResult(result.get("data"));
 		}else {
 			return responseService.getSingleResult(null, Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), false);
 		}
