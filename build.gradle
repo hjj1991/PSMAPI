@@ -56,6 +56,8 @@ dependencies {
 	
 	compile 'org.springframework.boot:spring-boot-starter-webflux'
    	compile 'org.projectreactor:reactor-spring:1.0.1.RELEASE'
+	// https://mvnrepository.com/artifact/org.modelmapper/modelmapper
+	compile group: 'org.modelmapper', name: 'modelmapper', version: '2.3.6'
 	
 	
 	compile group: 'org.bgee.log4jdbc-log4j2', name: 'log4jdbc-log4j2-jdbc4.1', version: '1.16'

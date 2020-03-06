@@ -71,8 +71,6 @@ public class UserController {
 	@ApiOperation(value = "회원 단건 조회", notes = "userId로 회원을 조회한다")
 	@RequestMapping(value = "/user", method = RequestMethod.GET)
 	public SingleResult<UserDetailDto> findUserById(@RequestHeader("X_AUTH_TOKEN") String authToken) {
-		// 결과데이터가 단일건인경우 getBasicResult를 이용해서 결과를 출력한다.
-
 		return responseService.getSingleResult(userService.getUserDetail(userRepository
 				.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
 	}

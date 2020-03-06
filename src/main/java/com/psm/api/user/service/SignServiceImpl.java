@@ -42,7 +42,7 @@ public class SignServiceImpl implements SignService{
 	private String secretKey;
 	@Override
 	public HashMap<String, Object> signIn(UserLoginDto userLoginDto) throws Exception {
-		
+		String userRole;
 		UserEntity user = userRepository.findByUserId(userLoginDto.getUserId()).orElseThrow(CUserNotFoundException::new);
 		if (!passwordEncoder.matches(userLoginDto.getUserPw(), user.getPassword()))
 			throw new PasswordNotMatchException();
@@ -50,12 +50,17 @@ public class SignServiceImpl implements SignService{
 		HashMap<String, Object> result = new HashMap<>();
 		List<String> tokenInfo = new ArrayList<String>();
 		tokenInfo = jwtTokenProvider.createToken(user.getUsername(), user.getUserRoles());
+		if(user.getUserRoles().get(0).equals("ROLE_MASTER")) {
+			userRole = "전체 관리자";
+		}else {
+			userRole = "일반 사용자";
+		}
 		result.put("X_AUTH_TOKEN", tokenInfo.get(0));
 		result.put("exAuthToken", tokenInfo.get(1));
 		result.put("X_REFRESH_TOKEN", jwtTokenProvider.createRefreshToken(user.getUsername(), user.getUserRoles()));
 		result.put("name", user.getName());
 		result.put("emailAddr", user.getUserEmail());
-		result.put("userRole", user.getUserRoles().get(0));
+		result.put("userRole", userRole);
 		result.put("inCompanyName", user.getCompanyIdx().getCompanyName());
 		
 		

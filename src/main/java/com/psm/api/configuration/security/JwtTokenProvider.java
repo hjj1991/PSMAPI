@@ -85,7 +85,7 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
                             .toLocalDateTime();
 		Date expiredDate = new Date(now.getTime() + refreshTokenValidMilisecond);
 		
-		final String refreshToken = Jwts.builder().setClaims(claims) // 데이터
+		String refreshToken = Jwts.builder().setClaims(claims) // 데이터
 				.setIssuedAt(now) // 토큰 발행일자
 				.setExpiration(expiredDate) // set Expire Time
 				.signWith(SignatureAlgorithm.HS256, secretKey) // 암호화 알고리즘, secret값 세팅
@@ -103,6 +103,8 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 				updateTokenEntity.setExpiredDatetime(expiredDate);
 				updateTokenEntity.setRefreshToken(refreshToken);
 				tokenRepository.save(updateTokenEntity);	
+			}else {
+				refreshToken = updateTokenEntity.getRefreshToken();
 			}
 		}else {
 			TokenEntity tokenEntity = new TokenEntity();

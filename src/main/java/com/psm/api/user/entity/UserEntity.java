@@ -45,7 +45,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @DynamicInsert
 @DynamicUpdate
-@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
+//@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @Table(name="tbl_user")
 public class UserEntity implements UserDetails  {
 	@Id

@@ -1,10 +1,9 @@
 package com.psm.api.user.service;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.function.Function;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -16,22 +15,16 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.psm.api.apiserver.dto.FindApiServerDto;
-import com.psm.api.apiserver.entity.ApiServerListEntity;
+import com.fasterxml.jackson.databind.util.Converter;
 import com.psm.api.common.exception.CUserNotFoundException;
-import com.psm.api.company.entity.CompanyEntity;
-import com.psm.api.configuration.security.JwtTokenProvider;
 import com.psm.api.user.dto.FindUserDto;
+import com.psm.api.user.dto.ResponseUserListDto;
 import com.psm.api.user.dto.UserDetailDto;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.user.repository.PagingUserRepository;
 import com.psm.api.user.repository.UserRepository;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureException;
-import io.jsonwebtoken.UnsupportedJwtException;
 
 
 @Service
@@ -55,7 +48,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	@Override
 	public HashMap<String, Object> findUser(FindUserDto findUserDto, String authToken) throws Exception {
 		// TODO Auto-generated method stub
-//		if(findCompanyDto.getPage())
 		int companyIdx; //회사 idx
 		HashMap<String, Object> result = new HashMap<String, Object>();
 		Page<UserEntity> data = null;
@@ -100,7 +92,27 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 				data = pagingUserRepository.findByCompanyIdx_CompanyIdx(companyIdx, pageRequest);
 			}		
 		}
-		result.put("data", data);
+
+		
+		ModelMapper modelMapper = new ModelMapper();
+		//Entity를 DTO형태로 변환해야 값 수정을 하더라도 dirtyChecking에 걸리지 않는다.
+		Page<ResponseUserListDto> responseUserListDto = data.map(new Function<UserEntity, ResponseUserListDto>(){
+			@Override
+			public ResponseUserListDto apply(UserEntity tempEntity) {
+				ResponseUserListDto dto = new ResponseUserListDto();
+				dto = modelMapper.map(tempEntity, ResponseUserListDto.class);
+				//권한에 따른 유저정보를 수정한다.
+				if(dto.getUserRoles().get(0).equals("ROLE_MASTER")){
+					dto.getUserRoles().set(0, "전체 관리자");
+				}else {
+					dto.getUserRoles().set(0, "일반 사용자");
+				}
+				return dto;
+			}
+		});
+		
+		result.put("data", responseUserListDto);
+		result.get("data");
 		return result;
 	}
 
@@ -109,12 +121,18 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	public UserDetailDto getUserDetail(UserEntity userEntity) {
 		
 		System.out.println(userEntity.getUsername());
+		String userRole;
+		if(userEntity.getUserRoles().get(0).equals("ROLE_MASTER")) {
+			userRole = "전체 관리자";
+		}else {
+			userRole = "일반 사용자";
+		}
 		
 		UserDetailDto userDetailDto = UserDetailDto.builder()
 			.userId(userEntity.getUserId())
 			.name(userEntity.getName())
 			.userPhone(userEntity.getUserPhone())
-			.userRole(userEntity.getUserRoles().get(0))
+			.userRole(userRole)
 			.userTel(userEntity.getUserPhone())
 			.createdDate(userEntity.getCreatedDate().toString())
 			.companyName(userEntity.getCompanyIdx().getCompanyName())
