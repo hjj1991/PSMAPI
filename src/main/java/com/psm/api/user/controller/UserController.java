@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +43,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 
 @Api(tags = { "1. User" })
@@ -79,7 +82,8 @@ public class UserController {
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "사용자 조회", notes = "사용자를 조회한다")
 	@RequestMapping(value = "/user/list", method = RequestMethod.GET)
-	public SingleResult<?> findUser(FindUserDto findUserDto, @RequestHeader("X_AUTH_TOKEN") String authToken) throws Exception {
+	public SingleResult<?> findUser(FindUserDto findUserDto, @RequestHeader("X_AUTH_TOKEN") String authToken)
+			throws Exception {
 //	responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
 		HashMap<String, Object> result = userService.findUser(findUserDto, authToken);
 
@@ -87,6 +91,13 @@ public class UserController {
 
 //	return responseService.getSingleResult(userService.getUserDetail(userRepository
 //			.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
+	}
+
+	@ApiOperation(value = "중복아이디 체크", notes = "아이디 입력")
+	@GetMapping(value = "/user/check/{userId}")
+	public SingleResult<Boolean> checkId(@ApiParam(value = "회원ID", required = true) @PathVariable String userId) {
+
+		return responseService.getSingleResult(userRepository.existsByUserId(userId));
 	}
 
 	@ApiOperation(value = "로그인", notes = "아이디로 로그인을 한다.")
@@ -111,12 +122,13 @@ public class UserController {
 	public SingleResult<?> tokenReissue(@RequestBody Map<String, Object> param) throws Exception {
 		HashMap<String, Object> result = signService.tokenReissue((String) param.get("refreshToken"));
 		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()),
-				(String) result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
+				result.get("resultMsg").toString(), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 	}
 
 	@ApiOperation(value = "가입", notes = "회원가입을 한다.")
 	@PutMapping(value = "/signup")
 	public CommonResult signin(@RequestBody @Valid UserSignUpDto userSignUpDto, BindingResult result) {
+		// Srping 인터페이스 유효성 검사 진행 Validator
 		if (result.hasErrors()) {
 			List<FieldError> errors = result.getFieldErrors();
 			HashMap<String, String> errorList = new HashMap<String, String>();
@@ -124,25 +136,15 @@ public class UserController {
 				errorList.put(error.getField(), error.getDefaultMessage());
 				// System.out.println (error.getField() + " - " + error.getDefaultMessage());
 			}
-			return responseService.getSingleResult(null, -1, "안됩니다.", false);
+			return responseService.getSingleResult(null, -1, "회원가입이 실패하였습니다.", false);
 		}
-//		userRepository.save(UserEntity.builder()
-//				.userId(userDto.getUserId())
-//				.userPw(passwordEncoder.encode(userDto.getUserPw()))
-//				.userName(userDto.getUserName())
-//				.userEmail(userDto.getUserEmail())
-//				.roles(Collections.singletonList("ROLE_USER")).build());
-		UserEntity userEntity = new UserEntity();
-		userEntity.setUserId(userSignUpDto.getUserId());
-		userEntity.setUserPw(passwordEncoder.encode((userSignUpDto.getUserPw())));
-		userEntity.setName(userSignUpDto.getName());
-		userEntity.setUserEmail(userSignUpDto.getUserEmail());
-		userEntity.setUserRoles(Collections.singletonList("ROLE_USER"));
-		userEntity.setUserTel(userSignUpDto.getUserTel());
-		userEntity.setUserPhone(userSignUpDto.getUserPhone());
-		userEntity.setCompanyIdx(companyRepository.getOne(userSignUpDto.getCompanyIdx()));
+		
 
-		userRepository.save(userEntity);
-		return responseService.getSuccessResult();
+
+		HashMap<String, Object> signUpResult = signService.signUp(userSignUpDto);
+
+		return responseService.getSingleResult(signUpResult.get("data"),
+				Integer.parseInt(signUpResult.get("code").toString()), signUpResult.get("msg").toString(),
+				Boolean.valueOf((boolean) signUpResult.get("success")).booleanValue());
 	}
 }

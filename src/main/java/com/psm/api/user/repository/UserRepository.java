@@ -10,5 +10,6 @@ import com.psm.api.user.entity.UserEntity;
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Integer> {
 	Optional<UserEntity> findByUserId(String userId);
+	boolean existsByUserId(String userId);
 
 }

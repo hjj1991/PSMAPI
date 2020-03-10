@@ -54,13 +54,26 @@ public class CompanyController {
 
 	@ApiImplicitParams({
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
+	@ApiOperation(value = "간략한 회사목록 조회", notes = "인덱스와 회사 이름으로 구성되어 있는 목록을 조회한다.")
+	@RequestMapping(value = "/simple/list", method = RequestMethod.GET)
+	public SingleResult<?> simpleCompanyList() {
+//	responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
+		return responseService.getSingleResult(companyService.simpleCompanyList());
+
+//	return responseService.getSingleResult(userService.getUserDetail(userRepository
+//			.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
+	}
+
+	@ApiImplicitParams({
+			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "소속회사 추가", notes = "소속회사를 추가한다")
 	@RequestMapping(value = "", method = RequestMethod.POST)
 	public SingleResult<?> insertCompany(@RequestBody List<InsertCompanyDto> insertCompanyList) {
 		HashMap<String, Object> result = companyService.insertCompany(insertCompanyList);
 
 //		return responseService.getSingleResult(result);
-		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("code").toString()), result.get("msg").toString(), Boolean.valueOf((boolean) result.get("success")).booleanValue());
+		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("code").toString()),
+				result.get("msg").toString(), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 
 	}
 

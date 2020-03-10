@@ -1,6 +1,9 @@
 package com.psm.api.user.service;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -16,8 +19,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.psm.api.common.exception.CUserNotFoundException;
 import com.psm.api.common.exception.PasswordNotMatchException;
+import com.psm.api.company.repository.CompanyRepository;
 import com.psm.api.configuration.security.JwtTokenProvider;
 import com.psm.api.user.dto.UserLoginDto;
+import com.psm.api.user.dto.UserSignUpDto;
 import com.psm.api.user.entity.TokenEntity;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.user.repository.TokenRepository;
@@ -34,12 +39,45 @@ public class SignServiceImpl implements SignService{
 	private UserRepository userRepository;
 	@Autowired
 	private TokenRepository tokenRepository;
+	@Autowired
+	private CompanyRepository companyRepository;
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 	
 	@Value("spring.jwt.secret")
 	private String secretKey;
+	
+	@Override
+	public HashMap<String, Object> signUp(UserSignUpDto userSignUpDto) {
+		String userRole;
+		HashMap<String, Object> result = new HashMap<>();
+		if(userSignUpDto.getUserRole().equals("전체 관리자")) {
+			userRole = "ROLE_MASTER";
+		}else {
+			userRole = "ROLE_USER";
+		}
+		
+		UserEntity userEntity = new UserEntity();
+		userEntity.setUserId(userSignUpDto.getUserId());
+		userEntity.setUserPw(passwordEncoder.encode((userSignUpDto.getUserPw())));
+		userEntity.setName(userSignUpDto.getName());
+		userEntity.setUserEmail(userSignUpDto.getUserEmail());
+		userEntity.setUserRoles(Collections.singletonList(userRole));
+		userEntity.setUserTel(userSignUpDto.getUserTel());
+		userEntity.setUserPhone(userSignUpDto.getUserPhone());
+		userEntity.setCompanyIdx(companyRepository.getOne(userSignUpDto.getCompanyIdx()));
+		
+		userRepository.save(userEntity);
+		result.put("code", 0);
+		result.put("msg", "성공하였습니다.");
+		result.put("success", true);
+		result.put("data", null);
+		
+		return result;
+		
+	}
+	
 	@Override
 	public HashMap<String, Object> signIn(UserLoginDto userLoginDto) throws Exception {
 		String userRole;

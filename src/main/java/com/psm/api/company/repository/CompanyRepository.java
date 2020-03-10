@@ -1,5 +1,7 @@
 package com.psm.api.company.repository;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,5 +16,6 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Integer>
 	Page<CompanyEntity> findByCompanyIdLike(String companyId, Pageable request);
 	CompanyEntity findByCompanyName(String companyName);
 	CompanyEntity findByCompanyId(String companyId);
+	List<CompanyEntity> findByDeletedYn(String deletedYn);
 	
 }

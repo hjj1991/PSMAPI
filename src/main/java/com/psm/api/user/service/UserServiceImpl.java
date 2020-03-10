@@ -1,7 +1,9 @@
 package com.psm.api.user.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,9 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.util.Converter;
 import com.psm.api.common.exception.CUserNotFoundException;
+import com.psm.api.company.dto.ResponseSimpleCompanyList;
+import com.psm.api.company.entity.CompanyEntity;
+import com.psm.api.company.repository.CompanyRepository;
 import com.psm.api.user.dto.FindUserDto;
 import com.psm.api.user.dto.ResponseUserListDto;
 import com.psm.api.user.dto.UserDetailDto;
@@ -32,6 +37,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
 	@Autowired
 	private UserRepository userRepository;
+	@Autowired
+	private CompanyRepository companyRepository;
 	@Autowired
 	private PagingUserRepository pagingUserRepository;
 	
@@ -111,8 +118,19 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			}
 		});
 		
+		List<CompanyEntity> companyEntity = companyRepository.findByDeletedYn("N");
+		List<ResponseSimpleCompanyList> responseSimpleCompanyList = companyEntity.stream().map(new Function<CompanyEntity, ResponseSimpleCompanyList>() {
+			@Override
+			public ResponseSimpleCompanyList apply(CompanyEntity t) {
+				// TODO Auto-generated method stub
+				ResponseSimpleCompanyList dto = modelMapper.map(t, ResponseSimpleCompanyList.class);
+				return dto;
+			}
+			
+		}).collect(Collectors.toList());
+		
 		result.put("data", responseUserListDto);
-		result.get("data");
+		result.put("companyList", responseSimpleCompanyList);
 		return result;
 	}
 

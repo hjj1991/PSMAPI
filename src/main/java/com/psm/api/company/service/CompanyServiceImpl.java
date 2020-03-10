@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,9 +22,12 @@ import com.psm.api.common.exception.CCompanyNotFoundException;
 import com.psm.api.common.exception.CUserNotFoundException;
 import com.psm.api.company.dto.FindCompanyDto;
 import com.psm.api.company.dto.InsertCompanyDto;
+import com.psm.api.company.dto.ResponseSimpleCompanyList;
 import com.psm.api.company.dto.UpdateCompanyDto;
 import com.psm.api.company.entity.CompanyEntity;
 import com.psm.api.company.repository.CompanyRepository;
+import com.psm.api.user.dto.ResponseUserListDto;
+import com.psm.api.user.entity.UserEntity;
 
 @Service
 public class CompanyServiceImpl implements CompanyService {
@@ -51,6 +59,24 @@ public class CompanyServiceImpl implements CompanyService {
 		
 		return result;
 	}
+	
+	@Override
+	public List<ResponseSimpleCompanyList> simpleCompanyList() {
+		// TODO Auto-generated method stub
+		ModelMapper modelMapper = new ModelMapper();
+		List<CompanyEntity> companyEntity = companyRepository.findByDeletedYn("N");
+		List<ResponseSimpleCompanyList> responseSimpleCompanyList = companyEntity.stream().map(new Function<CompanyEntity, ResponseSimpleCompanyList>() {
+			@Override
+			public ResponseSimpleCompanyList apply(CompanyEntity t) {
+				// TODO Auto-generated method stub
+				ResponseSimpleCompanyList tempCompany = new ResponseSimpleCompanyList();
+				tempCompany = modelMapper.map(t, ResponseSimpleCompanyList.class);
+				return tempCompany;
+			}
+		}).collect(Collectors.toList());
+		return responseSimpleCompanyList;
+	}
+
 
 	@Override
 	public HashMap<String, Object> insertCompany(List<InsertCompanyDto> insertCompanyList)  {
@@ -138,5 +164,6 @@ public class CompanyServiceImpl implements CompanyService {
 		
 		return result;
 	}
+
 
 }
