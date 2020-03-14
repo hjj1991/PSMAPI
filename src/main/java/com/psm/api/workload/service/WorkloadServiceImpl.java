@@ -9,18 +9,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,6 +85,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 		CloseableHttpClient httpClient = HttpClients.createDefault();
 		HttpPost httpPost = new HttpPost(actionUrl);
 		HttpHost target = new HttpHost(serverHost, 80, "http");
+		StringEntity postParams = new StringEntity("{\n}");
 		
 		CredentialsProvider credsProvider = new BasicCredentialsProvider();
 		credsProvider.setCredentials(AuthScope.ANY, new NTCredentials(userNameToAccessProtectServer,
@@ -90,14 +97,16 @@ public class WorkloadServiceImpl implements WorkloadService {
 		context.setCredentialsProvider(credsProvider);
 		
 		// Execute a cheap method first. This will trigger NTLM authentication
-		httpPost.addHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
+		httpPost.setHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
+		httpPost.setHeader("Content-type", "application/json");
+		httpPost.setEntity(postParams);
 		CloseableHttpResponse response = null;
 		
 		
 	    try {
 	    	response = httpClient.execute(target, httpPost, context);
 	    	System.out.println(response.getStatusLine());
-	    	if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+	    	if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
 	    		result.put("success", true);
 	    		list = mapper.readValue(EntityUtils.toString(response.getEntity()),new TypeReference<HashMap<String, String>>() {});
 	    		result.put("status", "200");

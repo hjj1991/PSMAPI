@@ -12,7 +12,7 @@ import com.psm.api.apiserver.entity.ApiServerListEntity;
 import com.psm.api.company.dto.UpdateCompanyDto;
 
 public interface ApiServerListService {
-	HashMap<String, Object> findApiServer(FindApiServerDto findApiServerDto);
+	HashMap<String, Object> findApiServer(FindApiServerDto findApiServerDto, String authToken) throws Exception;
 
 	HashMap<String, Object> insertApiServer(List<InsertApiServerDto> insertApiServerList);
 

@@ -117,17 +117,17 @@ public class WorkloadEntity extends ResponseWorkloadListDto {
 	@Column(nullable = true)
 	private String isWindowsCluster;
 	
-	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date lastFullOn;
+	@Column(nullable = true)
+	private String lastFullOn;
 	
-	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date lastIncrementalOn;
+	@Column(nullable = true)
+	private String lastIncrementalOn;
 	
-	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date lastTestedFailoverOn;
+	@Column(nullable = true)
+	private String lastTestedFailoverOn;
 	
-	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date lastUpdated;
+	@Column(nullable = true)
+	private String lastUpdated;
 	
 	@Column(nullable = true)
 	private String failoverMachineId;

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,9 +44,9 @@ public class ApiServerListController {
 			@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
 	@ApiOperation(value = "Api서버 조회", notes = "Api서버를 조회한다")
 	@RequestMapping(value = "", method = RequestMethod.GET)
-	public SingleResult<?> findApiServer(FindApiServerDto findApiServerDto) {
+	public SingleResult<?> findApiServer(FindApiServerDto findApiServerDto, @RequestHeader("X_AUTH_TOKEN") String authToken) throws Exception {
 //		responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
-		HashMap<String, Object> result = apiServerListService.findApiServer(findApiServerDto);
+		HashMap<String, Object> result = apiServerListService.findApiServer(findApiServerDto, authToken);
 
 		return responseService.getSingleResult(result);
 

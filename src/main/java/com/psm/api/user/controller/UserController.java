@@ -33,6 +33,7 @@ import com.psm.api.configuration.security.JwtTokenProvider;
 import com.psm.api.user.dto.FindUserDto;
 import com.psm.api.user.dto.UserDetailDto;
 import com.psm.api.user.dto.UserLoginDto;
+import com.psm.api.user.dto.UserModifyDTO;
 import com.psm.api.user.dto.UserSignUpDto;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.user.repository.UserRepository;
@@ -126,7 +127,7 @@ public class UserController {
 	}
 
 	@ApiOperation(value = "가입", notes = "회원가입을 한다.")
-	@PutMapping(value = "/signup")
+	@PostMapping(value = "/signup")
 	public CommonResult signin(@RequestBody @Valid UserSignUpDto userSignUpDto, BindingResult result) {
 		// Srping 인터페이스 유효성 검사 진행 Validator
 		if (result.hasErrors()) {
@@ -146,5 +147,28 @@ public class UserController {
 		return responseService.getSingleResult(signUpResult.get("data"),
 				Integer.parseInt(signUpResult.get("code").toString()), signUpResult.get("msg").toString(),
 				Boolean.valueOf((boolean) signUpResult.get("success")).booleanValue());
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
+	@ApiOperation(value = "수정", notes = "회원을 수정한다.")
+	@RequestMapping(value = "/user", method = RequestMethod.PUT)
+	public CommonResult modifyUser(@RequestBody @Valid UserModifyDTO userModifyDTO, BindingResult result) {
+		// Srping 인터페이스 유효성 검사 진행 Validator
+		if (result.hasErrors()) {
+			List<FieldError> errors = result.getFieldErrors();
+			HashMap<String, String> errorList = new HashMap<String, String>();
+			for (FieldError error : errors) {
+				errorList.put(error.getField(), error.getDefaultMessage());
+				// System.out.println (error.getField() + " - " + error.getDefaultMessage());
+			}
+			return responseService.getSingleResult(null, -1, "회원수정이 실패하였습니다.", false);
+		}
+		
+		HashMap<String, Object> modifyResult = userService.modifyUser(userModifyDTO);
+
+		return responseService.getSingleResult(modifyResult.get("data"),
+				Integer.parseInt(modifyResult.get("code").toString()), modifyResult.get("msg").toString(),
+				Boolean.valueOf((boolean) modifyResult.get("success")).booleanValue());
 	}
 }

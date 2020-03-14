@@ -1,9 +1,15 @@
 package com.psm.api.user.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import javax.validation.Valid;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.util.Converter;
@@ -25,6 +32,8 @@ import com.psm.api.company.repository.CompanyRepository;
 import com.psm.api.user.dto.FindUserDto;
 import com.psm.api.user.dto.ResponseUserListDto;
 import com.psm.api.user.dto.UserDetailDto;
+import com.psm.api.user.dto.UserModifyDTO;
+import com.psm.api.user.dto.UserSignUpDto;
 import com.psm.api.user.entity.UserEntity;
 import com.psm.api.user.repository.PagingUserRepository;
 import com.psm.api.user.repository.UserRepository;
@@ -41,6 +50,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 	private CompanyRepository companyRepository;
 	@Autowired
 	private PagingUserRepository pagingUserRepository;
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 	
 	@Value("spring.jwt.secret")
 	private String secretKey;
@@ -149,6 +160,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 		UserDetailDto userDetailDto = UserDetailDto.builder()
 			.userId(userEntity.getUserId())
 			.name(userEntity.getName())
+			.userEmail(userEntity.getUserEmail())
 			.userPhone(userEntity.getUserPhone())
 			.userRole(userRole)
 			.userTel(userEntity.getUserPhone())
@@ -156,6 +168,64 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			.companyName(userEntity.getCompanyIdx().getCompanyName())
 			.build();
 		return userDetailDto;
+	}
+
+	@Override
+	public HashMap<String, Object> modifyUser(UserModifyDTO userModifyDTO) {
+		// TODO Auto-generated method stub
+		UserEntity userEntity = userRepository.findByUserId(String.valueOf(userModifyDTO.getUserId())).orElseThrow(CUserNotFoundException::new);
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		List<String> userRoles = new ArrayList<String>();
+		if(userModifyDTO.getUserRole().equals("전체 관리자")) {
+			userRoles.add("ROLE_MASTER");
+		}else {
+			userRoles.add("ROLE_USER");
+		}
+		if(userModifyDTO.getUserPw() != null && !userModifyDTO.getUserPw().equals("")) {
+			Pattern pattern = Pattern.compile("^[a-z0-9~!@#$%^&*()_+|<>?:{}]{7,14}$");
+			Matcher match = pattern.matcher(userModifyDTO.getUserPw());
+			boolean checkPw = match.matches();
+			if(checkPw == true) {
+				userEntity.setUserPw(passwordEncoder.encode(userModifyDTO.getUserPw()));
+				userEntity.setName(userModifyDTO.getName());
+				userEntity.setUserEmail(userModifyDTO.getUserEmail());
+				userEntity.setUserPhone(userModifyDTO.getUserPhone());
+				userEntity.setUserTel(userModifyDTO.getUserTel());
+				userEntity.setUserRoles(userRoles);
+				userEntity.setDeletedYn(userModifyDTO.getDeletedYn());
+				userEntity.setCompanyIdx(companyRepository.findById(userModifyDTO.getCompanyIdx()).orElseThrow(CUserNotFoundException::new));
+				userRepository.save(userEntity);
+				
+				result.put("success", true);
+				result.put("code", 0);
+				result.put("msg", "성공하였습니다.");
+				result.put("data", userEntity);
+			}else {
+				result.put("success", false);
+				result.put("code", -1);
+				result.put("msg", "패스워드 정규식이 잘못되어 실패하였습니다.");
+			}
+		}else {
+			userEntity.setName(userModifyDTO.getName());
+			userEntity.setUserEmail(userModifyDTO.getUserEmail());
+			userEntity.setUserPhone(userModifyDTO.getUserPhone());
+			userEntity.setUserTel(userModifyDTO.getUserTel());
+			userEntity.setDeletedYn(userModifyDTO.getDeletedYn());
+			userEntity.setUserRoles(userRoles);
+			userEntity.setCompanyIdx(companyRepository.findById(userModifyDTO.getCompanyIdx()).orElseThrow(CUserNotFoundException::new));
+			userRepository.save(userEntity);
+			result.put("success", true);
+			result.put("code", 0);
+			result.put("msg", "성공하였습니다.");
+			result.put("data", userEntity);
+		}
+		
+		
+		
+		
+
+		
+		return result;
 	}
 	
 }

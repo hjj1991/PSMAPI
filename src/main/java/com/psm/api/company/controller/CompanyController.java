@@ -43,13 +43,8 @@ public class CompanyController {
 	@ApiOperation(value = "소속회사 조회", notes = "소속회사를 조회한다")
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public SingleResult<?> findCompany(FindCompanyDto findCompanyDto) {
-//		responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
 		Page<CompanyEntity> result = companyService.findCompany(findCompanyDto);
-
 		return responseService.getSingleResult(result);
-
-//		return responseService.getSingleResult(userService.getUserDetail(userRepository
-//				.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
 	}
 
 	@ApiImplicitParams({
@@ -57,11 +52,7 @@ public class CompanyController {
 	@ApiOperation(value = "간략한 회사목록 조회", notes = "인덱스와 회사 이름으로 구성되어 있는 목록을 조회한다.")
 	@RequestMapping(value = "/simple/list", method = RequestMethod.GET)
 	public SingleResult<?> simpleCompanyList() {
-//	responseService.getSingleResult(companyRepository.findByDeletedYn("Y", pageable));
 		return responseService.getSingleResult(companyService.simpleCompanyList());
-
-//	return responseService.getSingleResult(userService.getUserDetail(userRepository
-//			.findByUserId(jwtTokenProvider.getUserPk(authToken)).orElseThrow(CUserNotFoundException::new)));
 	}
 
 	@ApiImplicitParams({
@@ -70,8 +61,6 @@ public class CompanyController {
 	@RequestMapping(value = "", method = RequestMethod.POST)
 	public SingleResult<?> insertCompany(@RequestBody List<InsertCompanyDto> insertCompanyList) {
 		HashMap<String, Object> result = companyService.insertCompany(insertCompanyList);
-
-//		return responseService.getSingleResult(result);
 		return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("code").toString()),
 				result.get("msg").toString(), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 
@@ -83,8 +72,6 @@ public class CompanyController {
 	@RequestMapping(value = "", method = RequestMethod.PUT)
 	public SingleResult<?> updateCompany(@RequestBody UpdateCompanyDto updateCompanyValue) throws Exception {
 		CompanyEntity result = companyService.updateCompany(updateCompanyValue);
-
-//	return responseService.getSingleResult(result);
 		return responseService.getSingleResult(result);
 
 	}
@@ -95,8 +82,6 @@ public class CompanyController {
 	@RequestMapping(value = "", method = RequestMethod.DELETE)
 	public SingleResult<?> deleteCompany(@RequestBody List<String> deleteCompanyIdxList) throws Exception {
 		HashMap<String, Object> result = companyService.deleteCompany(deleteCompanyIdxList);
-
-//return responseService.getSingleResult(result);
 		return responseService.getSingleResult(result);
 
 	}

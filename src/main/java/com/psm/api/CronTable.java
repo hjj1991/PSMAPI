@@ -45,8 +45,8 @@ public class CronTable {
 	@Autowired
 	ApiServerListRepository apiServerListRepository;
 
-    // 애플리케이션 시작 후 60초 후에 첫 실행, 그 후 매 60초마다 주기적으로 실행한다.
-    @Scheduled(initialDelay = 60000, fixedDelay = 60000)
+    // 애플리케이션 시작 후 2분 후에 첫 실행, 그 후 매 2분마다 주기적으로 실행한다.
+    @Scheduled(initialDelay = 60000 * 2, fixedDelay = 60000 * 2)
     @Transactional
     public void workloadSync() {
 
@@ -57,7 +57,7 @@ public class CronTable {
 //		List<WorkloadDto> workloadList = new ArrayList<WorkloadDto>();
 		
 		//액션테이블 비우기
-		availableActionRepository.deleteAllInBatch();
+//		availableActionRepository.deleteAllInBatch();
 		availableActionRepository.resetIdAvailableActionTable();
 		
 		for(ApiServerListEntity apiserverInfo: apiserverList) {
@@ -74,6 +74,7 @@ public class CronTable {
 			
 			WorkloadsDto tmpWorkloadList = null;
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd a KK:mm:ss");
+			SimpleDateFormat sdf2 = new SimpleDateFormat("M/d/yyyy KK:mm:ss a");
 			URI startingUri = null;
 			try {
 				startingUri = new URI("/protectionservices/Workloads/");
@@ -102,41 +103,15 @@ public class CronTable {
 						HttpGet httpget2 = new HttpGet(tmpWorkloadList.getWorkloads().get(i).getUri());
 						httpget2.addHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
 						CloseableHttpResponse response2 = httpClient.execute(target, httpget2, context);
-						System.out.println("흐아아!2!");
 						if(response2.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 							tmpWorkloadList.getWorkloads().set(i, mapper.readValue(EntityUtils.toString(response2.getEntity(),"UTF-8"), WorkloadDto.class));
 							tmpWorkloadList.getWorkloads().get(i).setCompanyName(apiserverInfo.getCompanyIdx().getCompanyName());
 							tmpWorkloadList.getWorkloads().get(i).setWorkloadServerHost(serverHost);
 							String workloadId = tmpWorkloadList.getWorkloads().get(i).getUri().substring(tmpWorkloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1);
-							System.out.println("흐아아!!");
-							System.out.println(workloadId);
-							System.out.println(workloadRepository.findByWorkloadId("123"));
-							System.out.println("왜안돼");
-							try {
-								System.out.println(workloadRepository.findByWorkloadId(workloadId));
-								System.out.println("크앙크앙!");
-							} catch (Exception e) {
-								// TODO: handle exception
-								e.printStackTrace();
-								System.out.println("호호호");
-							}
-							
-							System.out.println("켁");
 							//기존 워크로드ID가 존재하면 업데이트한다.
 							if(workloadRepository.findByWorkloadId(workloadId) != null){							
 								//기존 워크로드 ID로 조회하여 가능한 액션 전부삭제
 //								availableActionRepository.deleteInBatch(availableActionRepository.findByWorkloadId(workloadId));
-							System.out.println("하이");
-							System.out.println(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size());
-							System.out.println("하이");
-								//사용가능한 워크로드 액션들을 insert한다.
-								for(int availableCount = 0; availableCount < tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size(); availableCount++) {
-									AvailableActionEntity tempAvailableActionEntity = new AvailableActionEntity();
-									tempAvailableActionEntity.setName(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().get(availableCount).get("Name"));
-									tempAvailableActionEntity.setUri(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().get(availableCount).get("Uri"));
-									tempAvailableActionEntity.setWorkloadId(workloadId);
-									availableActionRepository.save(tempAvailableActionEntity);
-								}
 								WorkloadEntity workloadEntity = new WorkloadEntity();
 								workloadEntity = workloadRepository.findByWorkloadId(workloadId);
 								workloadEntity.setServerHost(apiserverInfo.getServerHost());
@@ -160,10 +135,10 @@ public class CronTable {
 								workloadEntity.setRunFailoverOnReplicationSuccess(tmpWorkloadList.getWorkloads().get(i).getParameters().get(7).get("Value"));
 								workloadEntity.setIsRemoteWorkload(tmpWorkloadList.getWorkloads().get(i).getParameters().get(8).get("Value"));
 								workloadEntity.setIsWindowsCluster(tmpWorkloadList.getWorkloads().get(i).getParameters().get(9).get("Value"));
-								workloadEntity.setLastFullOn(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(10).get("Value")));
-								workloadEntity.setLastIncrementalOn(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(11).get("Value")));
-								workloadEntity.setLastTestedFailoverOn(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(12).get("Value")));
-								workloadEntity.setLastUpdated(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(13).get("Value")));
+								workloadEntity.setLastFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(10).get("Value"));
+								workloadEntity.setLastIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(11).get("Value"));
+								workloadEntity.setLastTestedFailoverOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(12).get("Value"));
+								workloadEntity.setLastUpdated(tmpWorkloadList.getWorkloads().get(i).getParameters().get(13).get("Value"));
 								workloadEntity.setFailoverMachineId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(14).get("Value"));
 								workloadEntity.setNextFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(15).get("Value"));
 								workloadEntity.setNextIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(16).get("Value"));
@@ -187,12 +162,6 @@ public class CronTable {
 								workloadEntity.setWorkloadConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getWorkloadConfigurationUri());
 								workloadEntity.setCompanyIdx(apiserverInfo.getCompanyIdx());
 								workloadRepository.save(workloadEntity);
-							}else { //기존 워크로드ID가 존재하지 않으면 새로 insert
-								
-								System.out.println("하이2");
-								System.out.println(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size());
-								System.out.println("하이2");
-								
 								//사용가능한 워크로드 액션들을 insert한다.
 								for(int availableCount = 0; availableCount < tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size(); availableCount++) {
 									AvailableActionEntity tempAvailableActionEntity = new AvailableActionEntity();
@@ -201,55 +170,66 @@ public class CronTable {
 									tempAvailableActionEntity.setWorkloadId(workloadId);
 									availableActionRepository.save(tempAvailableActionEntity);
 								}
-								WorkloadEntity workloadEntity = new WorkloadEntity();
-								workloadEntity.setServerHost(apiserverInfo.getServerHost());
-								workloadEntity.setWorkloadId(tmpWorkloadList.getWorkloads().get(i).getUri().substring(tmpWorkloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1));
-								workloadEntity.setTargetId(tmpWorkloadList.getWorkloads().get(i).getContainerUri().substring(tmpWorkloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1));
-								workloadEntity.setCurrentState(tmpWorkloadList.getWorkloads().get(i).getCurrentState());
-								workloadEntity.setMachineName(tmpWorkloadList.getWorkloads().get(i).getMachineName());
-								workloadEntity.setName(tmpWorkloadList.getWorkloads().get(i).getName());
-								workloadEntity.setOnline(tmpWorkloadList.getWorkloads().get(i).getOnline());
-								workloadEntity.setOperatingSystem(tmpWorkloadList.getWorkloads().get(i).getOperatingSystem());
-								workloadEntity.setOperatingSystemVersion(tmpWorkloadList.getWorkloads().get(i).getOperatingSystemVersion());
-								workloadEntity.setServicePack(tmpWorkloadList.getWorkloads().get(i).getParameters().get(20).get("Value"));
-								workloadEntity.setSourceMachinId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(21).get("Value"));
-								workloadEntity.setUserName(tmpWorkloadList.getWorkloads().get(i).getParameters().get(0).get("Value"));
-								workloadEntity.setDiscoveryAddress(tmpWorkloadList.getWorkloads().get(i).getParameters().get(1).get("Value"));
-								workloadEntity.setAreBBTollsInstalled(tmpWorkloadList.getWorkloads().get(i).getParameters().get(2).get("Value"));
-								workloadEntity.setReadyToCopySnapshotName(tmpWorkloadList.getWorkloads().get(i).getParameters().get(3).get("Value"));
-								workloadEntity.setCanDeleteVm(tmpWorkloadList.getWorkloads().get(i).getParameters().get(4).get("Value"));
-								workloadEntity.setCanRemoveSource(tmpWorkloadList.getWorkloads().get(i).getParameters().get(5).get("Value"));
-								workloadEntity.setCanRemoveBBT(tmpWorkloadList.getWorkloads().get(i).getParameters().get(6).get("Value"));
-								workloadEntity.setRunFailoverOnReplicationSuccess(tmpWorkloadList.getWorkloads().get(i).getParameters().get(7).get("Value"));
-								workloadEntity.setIsRemoteWorkload(tmpWorkloadList.getWorkloads().get(i).getParameters().get(8).get("Value"));
-								workloadEntity.setIsWindowsCluster(tmpWorkloadList.getWorkloads().get(i).getParameters().get(9).get("Value"));
-								workloadEntity.setLastFullOn(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(10).get("Value")));
-								workloadEntity.setLastIncrementalOn(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(11).get("Value")));
-								workloadEntity.setLastTestedFailoverOn(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(12).get("Value")));
-								workloadEntity.setLastUpdated(sdf.parse(tmpWorkloadList.getWorkloads().get(i).getParameters().get(13).get("Value")));
-								workloadEntity.setFailoverMachineId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(14).get("Value"));
-								workloadEntity.setNextFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(15).get("Value"));
-								workloadEntity.setNextIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(16).get("Value"));
-								workloadEntity.setOnlineStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(17).get("Value"));
-								workloadEntity.setProtectionLevel(tmpWorkloadList.getWorkloads().get(i).getParameters().get(22).get("Value"));
-								workloadEntity.setProtectionState(tmpWorkloadList.getWorkloads().get(i).getParameters().get(23).get("Value"));
-								workloadEntity.setTargetPRO(tmpWorkloadList.getWorkloads().get(i).getParameters().get(24).get("Value"));
-								workloadEntity.setWorkflowStep(tmpWorkloadList.getWorkloads().get(i).getParameters().get(25).get("Value"));
-								workloadEntity.setWorkloadLifecycle(tmpWorkloadList.getWorkloads().get(i).getParameters().get(26).get("Value"));
-								workloadEntity.setWorkloadGroupId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(27).get("Value"));
-								workloadEntity.setReplicationScheduleStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(28).get("Value"));
-								workloadEntity.setSourceMachineControllerAlias(tmpWorkloadList.getWorkloads().get(i).getParameters().get(29).get("Value"));
-								workloadEntity.setPrepareForFailoverConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getPrepareForFailoverConfigurationUri());
-								workloadEntity.setScheduleActive(tmpWorkloadList.getWorkloads().get(i).getScheduleActive());
-								workloadEntity.setSchedulesUri(tmpWorkloadList.getWorkloads().get(i).getSchedulesUri());
-								workloadEntity.setTag(tmpWorkloadList.getWorkloads().get(i).getTag());
-								workloadEntity.setTestCutoverMarkedSuccessful(tmpWorkloadList.getWorkloads().get(i).getTestCutoverMarkedSuccessful());
-								workloadEntity.setTestFailoverConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getTestFailoverConfigurationUri());
-								workloadEntity.setTmData(tmpWorkloadList.getWorkloads().get(i).getTmData());
-								workloadEntity.setWindowsServiceUri(tmpWorkloadList.getWorkloads().get(i).getWindowsServicesUri());
-								workloadEntity.setWorkloadConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getWorkloadConfigurationUri());
-								workloadEntity.setCompanyIdx(apiserverInfo.getCompanyIdx());
-								workloadRepository.save(workloadEntity);
+							}else { //기존 워크로드ID가 존재하지 않으면 새로 insert
+								//사용가능한 워크로드 액션들을 insert한다.
+								for(int availableCount = 0; availableCount < tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().size(); availableCount++) {
+									AvailableActionEntity tempAvailableActionEntity = new AvailableActionEntity();
+									tempAvailableActionEntity.setName(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().get(availableCount).get("Name"));
+									tempAvailableActionEntity.setUri(tmpWorkloadList.getWorkloads().get(i).getAvailableTransitions().get(availableCount).get("Uri"));
+									tempAvailableActionEntity.setWorkloadId(workloadId);
+									availableActionRepository.save(tempAvailableActionEntity);
+								}
+									
+									WorkloadEntity workloadEntity = new WorkloadEntity();
+									workloadEntity.setServerHost(apiserverInfo.getServerHost());
+									workloadEntity.setWorkloadId(tmpWorkloadList.getWorkloads().get(i).getUri().substring(tmpWorkloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1));
+									workloadEntity.setTargetId(tmpWorkloadList.getWorkloads().get(i).getContainerUri().substring(tmpWorkloadList.getWorkloads().get(i).getUri().lastIndexOf("/")+1));
+									workloadEntity.setCurrentState(tmpWorkloadList.getWorkloads().get(i).getCurrentState());
+									workloadEntity.setMachineName(tmpWorkloadList.getWorkloads().get(i).getMachineName());
+									workloadEntity.setName(tmpWorkloadList.getWorkloads().get(i).getName());
+									workloadEntity.setOnline(tmpWorkloadList.getWorkloads().get(i).getOnline());
+									workloadEntity.setOperatingSystem(tmpWorkloadList.getWorkloads().get(i).getOperatingSystem());
+									workloadEntity.setOperatingSystemVersion(tmpWorkloadList.getWorkloads().get(i).getOperatingSystemVersion());
+									workloadEntity.setServicePack(tmpWorkloadList.getWorkloads().get(i).getParameters().get(20).get("Value"));
+									workloadEntity.setSourceMachinId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(21).get("Value"));
+									workloadEntity.setUserName(tmpWorkloadList.getWorkloads().get(i).getParameters().get(0).get("Value"));
+									workloadEntity.setDiscoveryAddress(tmpWorkloadList.getWorkloads().get(i).getParameters().get(1).get("Value"));
+									workloadEntity.setAreBBTollsInstalled(tmpWorkloadList.getWorkloads().get(i).getParameters().get(2).get("Value"));
+									workloadEntity.setReadyToCopySnapshotName(tmpWorkloadList.getWorkloads().get(i).getParameters().get(3).get("Value"));
+									workloadEntity.setCanDeleteVm(tmpWorkloadList.getWorkloads().get(i).getParameters().get(4).get("Value"));
+									workloadEntity.setCanRemoveSource(tmpWorkloadList.getWorkloads().get(i).getParameters().get(5).get("Value"));
+									workloadEntity.setCanRemoveBBT(tmpWorkloadList.getWorkloads().get(i).getParameters().get(6).get("Value"));
+									workloadEntity.setRunFailoverOnReplicationSuccess(tmpWorkloadList.getWorkloads().get(i).getParameters().get(7).get("Value"));
+									workloadEntity.setIsRemoteWorkload(tmpWorkloadList.getWorkloads().get(i).getParameters().get(8).get("Value"));
+									workloadEntity.setIsWindowsCluster(tmpWorkloadList.getWorkloads().get(i).getParameters().get(9).get("Value"));
+									workloadEntity.setLastFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(10).get("Value"));
+									workloadEntity.setLastIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(11).get("Value"));
+									workloadEntity.setLastTestedFailoverOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(12).get("Value"));
+									workloadEntity.setLastUpdated(tmpWorkloadList.getWorkloads().get(i).getParameters().get(13).get("Value"));
+									workloadEntity.setFailoverMachineId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(14).get("Value"));
+									workloadEntity.setNextFullOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(15).get("Value"));
+									workloadEntity.setNextIncrementalOn(tmpWorkloadList.getWorkloads().get(i).getParameters().get(16).get("Value"));
+									workloadEntity.setOnlineStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(17).get("Value"));
+									workloadEntity.setProtectionLevel(tmpWorkloadList.getWorkloads().get(i).getParameters().get(22).get("Value"));
+									workloadEntity.setProtectionState(tmpWorkloadList.getWorkloads().get(i).getParameters().get(23).get("Value"));
+									workloadEntity.setTargetPRO(tmpWorkloadList.getWorkloads().get(i).getParameters().get(24).get("Value"));
+									workloadEntity.setWorkflowStep(tmpWorkloadList.getWorkloads().get(i).getParameters().get(25).get("Value"));
+									workloadEntity.setWorkloadLifecycle(tmpWorkloadList.getWorkloads().get(i).getParameters().get(26).get("Value"));
+									workloadEntity.setWorkloadGroupId(tmpWorkloadList.getWorkloads().get(i).getParameters().get(27).get("Value"));
+									workloadEntity.setReplicationScheduleStatus(tmpWorkloadList.getWorkloads().get(i).getParameters().get(28).get("Value"));
+									workloadEntity.setSourceMachineControllerAlias(tmpWorkloadList.getWorkloads().get(i).getParameters().get(29).get("Value"));
+									workloadEntity.setPrepareForFailoverConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getPrepareForFailoverConfigurationUri());
+									workloadEntity.setScheduleActive(tmpWorkloadList.getWorkloads().get(i).getScheduleActive());
+									workloadEntity.setSchedulesUri(tmpWorkloadList.getWorkloads().get(i).getSchedulesUri());
+									workloadEntity.setTag(tmpWorkloadList.getWorkloads().get(i).getTag());
+									workloadEntity.setTestCutoverMarkedSuccessful(tmpWorkloadList.getWorkloads().get(i).getTestCutoverMarkedSuccessful());
+									workloadEntity.setTestFailoverConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getTestFailoverConfigurationUri());
+									workloadEntity.setTmData(tmpWorkloadList.getWorkloads().get(i).getTmData());
+									workloadEntity.setWindowsServiceUri(tmpWorkloadList.getWorkloads().get(i).getWindowsServicesUri());
+									workloadEntity.setWorkloadConfigurationUri(tmpWorkloadList.getWorkloads().get(i).getWorkloadConfigurationUri());
+									workloadEntity.setCompanyIdx(apiserverInfo.getCompanyIdx());
+									workloadRepository.save(workloadEntity);
+								
 							}
 						}else {	//워크로드 정보불러오기 실패시
 							

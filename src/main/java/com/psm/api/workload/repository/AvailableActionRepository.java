@@ -12,8 +12,12 @@ public interface AvailableActionRepository extends JpaRepository<AvailableAction
 
 	List<AvailableActionEntity> findByWorkloadId(String workloadId);
 
+//	@Modifying
+//	@Query(value = "DBCC CHECKIDENT(tbl_available_action, reseed, 0)", nativeQuery = true)
+//	void resetIdAvailableActionTable();
 	@Modifying
-	@Query(value = "DBCC CHECKIDENT(tbl_available_action, reseed, 0)", nativeQuery = true)
+	@Query(value = "TRUNCATE Table tbl_available_action", nativeQuery = true)
 	void resetIdAvailableActionTable();
+
 
 }
