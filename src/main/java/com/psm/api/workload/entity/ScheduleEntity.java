@@ -4,9 +4,12 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.DynamicUpdate;
@@ -25,8 +28,9 @@ public class ScheduleEntity {
 	@Column(name = "schedule_idx")
 	private int scheduleIdx;
 	
-	@Column(nullable = false, unique = true, length = 100)
-	private String workloadId;
+	@ManyToOne(optional = true, fetch = FetchType.LAZY)
+	@JoinColumn(name="workload_id", nullable = false, referencedColumnName = "workloadId", unique = true)
+	private WorkloadEntity workloadId;
 	
 	@Column(nullable = false, columnDefinition = "datetime2")
 	private Date fullReplicationStartdate;

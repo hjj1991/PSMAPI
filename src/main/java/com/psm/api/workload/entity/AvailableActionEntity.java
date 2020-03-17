@@ -42,4 +42,6 @@ public class AvailableActionEntity {
 	
 	@Column(nullable = false, length = 200)
 	private String name;
+	
+
 }

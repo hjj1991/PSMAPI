@@ -163,7 +163,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 			.userEmail(userEntity.getUserEmail())
 			.userPhone(userEntity.getUserPhone())
 			.userRole(userRole)
-			.userTel(userEntity.getUserPhone())
+			.userTel(userEntity.getUserTel())
 			.createdDate(userEntity.getCreatedDate().toString())
 			.companyName(userEntity.getCompanyIdx().getCompanyName())
 			.build();

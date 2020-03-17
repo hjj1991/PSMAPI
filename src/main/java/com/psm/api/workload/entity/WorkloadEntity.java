@@ -1,5 +1,6 @@
 package com.psm.api.workload.entity;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -39,7 +40,12 @@ import lombok.Setter;
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
 @Getter
 @Setter
-public class WorkloadEntity extends ResponseWorkloadListDto {
+public class WorkloadEntity extends ResponseWorkloadListDto implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(name = "workload_idx")
@@ -55,10 +61,9 @@ public class WorkloadEntity extends ResponseWorkloadListDto {
 	@Column(nullable = false)
 	private String serverHost;
 	
-//	@JsonIgnore
-//	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-//	@JoinColumn(name="workloadId", referencedColumnName = "workloadId", nullable = true)
-//	private Collection<AvailableActionEntity> availableActionList;
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "workloadId")
+	private Collection<ScheduleEntity> scheduleList;
+	
 	
 	@Column(nullable = true)
 	private String targetId;
@@ -191,5 +196,11 @@ public class WorkloadEntity extends ResponseWorkloadListDto {
 	
 	@Column(nullable = true)
 	private String workloadConfigurationUri;
+	
+	@Column(nullable = true, length = 200)
+	private String operationUri;
+	
+	@Column(nullable = false, columnDefinition = "datetime2 default getdate()")
+	private Date syncDate;
 	
 }

@@ -11,5 +11,5 @@ import com.psm.api.workload.dto.WorkloadsDto;
 public interface WorkloadService {
 	HashMap<String, Object> getWorkloadList(FindWorkloadDto findWorkloadDto, String authToken) throws Exception;
 
-	HashMap<String, Object> postWorkloadAction(String serverHost, String actionUrl) throws Exception;
+	HashMap<String, Object> postWorkloadAction(String serverHost, String actionUrl, String workloadId) throws Exception;
 }

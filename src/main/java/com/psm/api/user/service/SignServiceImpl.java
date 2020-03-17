@@ -84,6 +84,8 @@ public class SignServiceImpl implements SignService{
 		UserEntity user = userRepository.findByUserId(userLoginDto.getUserId()).orElseThrow(CUserNotFoundException::new);
 		if (!passwordEncoder.matches(userLoginDto.getUserPw(), user.getPassword()))
 			throw new PasswordNotMatchException();
+		if (user.getDeletedYn().equals("Y"))
+			throw new CUserNotFoundException();
 		
 		HashMap<String, Object> result = new HashMap<>();
 		List<String> tokenInfo = new ArrayList<String>();
