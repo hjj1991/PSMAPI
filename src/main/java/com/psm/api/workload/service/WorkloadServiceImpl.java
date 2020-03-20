@@ -580,10 +580,10 @@ public class WorkloadServiceImpl implements WorkloadService {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Date currentTime = sdf.parse(sdf.format(new Date()));
 
-		Date fullReplicationStartDate = sdf.parse(scheduleEntity.getFullReplicationStartDate().toString());
+		Date nextFullReplicationStartDate = sdf.parse(scheduleEntity.getNextFullReplicationDate().toString());
 		Date incrementalRplicationStartDate = sdf.parse(scheduleEntity.getIncrementalReplicationStartDate().toString());
 
-		if (currentTime.compareTo(fullReplicationStartDate) >= 0) {
+		if (currentTime.compareTo(nextFullReplicationStartDate) >= 0) {
 			if (scheduleEntity.getWorkloadId().getCurrentState().equals("Idle")) {
 				AvailableActionEntity fullReplicationActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "RunReplication");
 				AvailableActionEntity testFailOverActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "TestFailover");
@@ -591,10 +591,12 @@ public class WorkloadServiceImpl implements WorkloadService {
 					CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
 							passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, fullReplicationActionEntity.getUri());
 					if(actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK || actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
+						Date nowDate = new Date();	//스케줄이 시작한 날짜를 시작 날짜로 다시 정의한다.
 						HashMap<String, Object> responseResult = new HashMap<String, Object>();
 						responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
 						scheduleEntity.setScheduleStatus(1);
 						scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
+						scheduleEntity.setFullReplicationStartDate(nowDate);
 						scheduleRepository.save(scheduleEntity);
 						writeLogService.writeLogFile(workloadId, "Run Replication 시작!");
 					}
@@ -634,16 +636,12 @@ public class WorkloadServiceImpl implements WorkloadService {
 					//TestFailover 정상 완료됐을 경우
 					if(workloadOperationValue.getIsFinished().equals("true") && workloadOperationValue.getIsSucceeded().equals("true")) {
 						Date finishedDate = new Date(Long.parseLong(workloadOperationValue.getFinishedAt().substring(6, 19)) + 9*60*60*1000); //외국시간이라 9시간 더해줘야 한국시간임.
-						Calendar cal = Calendar.getInstance();
-						cal.setTime(scheduleEntity.getFullReplicationStartDate());
-						writeLogService.writeLogFile(workloadId, cal.getTime().toString());
-						cal.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());
+						Calendar nextFullReplicationDate = Calendar.getInstance();
+						nextFullReplicationDate.setTime(scheduleEntity.getFullReplicationStartDate());
+						nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
 						scheduleEntity.setScheduleStatus(3);
-						scheduleEntity.setFullReplicationStartDate(scheduleEntity.getNextFullReplicationDate());
-						scheduleEntity.setNextFullReplicationDate(cal.getTime());
+						scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
 						scheduleEntity.setFullReplicationFinishedDate(finishedDate);
-						writeLogService.writeLogFile(workloadId, cal.getTime().toString());
-						writeLogService.writeLogFile(workloadId, finishedDate.toString());
 						scheduleRepository.save(scheduleEntity);
 						writeLogService.writeLogFile(workloadId, "Test FailOver 상태입니다.!");
 						

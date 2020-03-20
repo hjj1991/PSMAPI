@@ -17,9 +17,12 @@ public class WriteLogService {
 	
 	public void createLogFile(String workloadId) throws IOException {
 		
+		File path = new File(folderPath);
 		File file = new File(folderPath + workloadId + ".txt");
-		System.out.println(file);
-		System.out.println("코코");
+		
+		if(!path.exists()) {
+			path.mkdir(); //폴더 생성합니다.
+		}
 		
 		if(!file.exists()){
 			file.createNewFile();
