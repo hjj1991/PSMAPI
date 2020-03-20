@@ -1,40 +1,22 @@
 package com.psm.api;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
-import org.apache.http.HttpHost;
-import org.apache.http.HttpStatus;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.NTCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.psm.api.apiserver.entity.ApiServerListEntity;
 import com.psm.api.apiserver.repository.ApiServerListRepository;
-import com.psm.api.workload.dto.WorkloadDto;
-import com.psm.api.workload.dto.WorkloadsDto;
-import com.psm.api.workload.entity.AvailableActionEntity;
-import com.psm.api.workload.entity.WorkloadEntity;
+import com.psm.api.workload.entity.ScheduleEntity;
 import com.psm.api.workload.repository.AvailableActionRepository;
+import com.psm.api.workload.repository.ScheduleRepository;
 import com.psm.api.workload.repository.WorkloadRepository;
-import com.psm.api.workload.service.TestService;
+import com.psm.api.workload.service.WorkloadService;
 
 @Component
 public class CronTable {
@@ -44,7 +26,9 @@ public class CronTable {
 	@Autowired
 	AvailableActionRepository availableActionRepository;
 	@Autowired
-	TestService testService;
+	WorkloadService workloadService;
+	@Autowired
+	ScheduleRepository scheduleRepository;
 	
 	@Autowired
 	ApiServerListRepository apiServerListRepository;
@@ -69,8 +53,25 @@ public class CronTable {
 			if(apiserverInfo.getCompanyIdx() == null || apiserverInfo.getCompanyIdx().getDeletedYn().equals("Y") || apiserverInfo.getDeletedYn().equals("Y")) {
 				continue;
 			}
-			testService.asyncTest(apiserverInfo);
+			workloadService.asyncWorkload(apiserverInfo);
 		}
 	}
+    
+    @Scheduled(fixedDelay = 60000 * 1)
+    @Transactional
+    public void checkSchedule() throws Exception {
+    	System.out.println("Current Thread : {}" + Thread.currentThread().getName());
+    	List<ScheduleEntity> scheduleEntityList = scheduleRepository.findByDeletedYn("N");
+
+    	for(ScheduleEntity scheduleEntity : scheduleEntityList) {
+
+
+			workloadService.scheduleWorkloadAction(scheduleEntity);
+
+    		
+    		
+    		
+    	}
+    }
     
 }

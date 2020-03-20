@@ -11,6 +11,7 @@ import com.psm.api.workload.entity.AvailableActionEntity;
 public interface AvailableActionRepository extends JpaRepository<AvailableActionEntity, Integer> {
 
 	List<AvailableActionEntity> findByWorkloadId(String workloadId);
+	AvailableActionEntity findTopByWorkloadIdAndName(String workloadId, String name);
 
 //	@Modifying
 //	@Query(value = "DBCC CHECKIDENT(tbl_available_action, reseed, 0)", nativeQuery = true)

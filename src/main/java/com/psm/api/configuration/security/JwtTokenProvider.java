@@ -43,7 +43,7 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 	@Value("spring.jwt.secret")
 	private String secretKey;
 
-	private long tokenValidMilisecond = 1000L * 60 * 20; // 30분만 토큰 유효
+	private long tokenValidMilisecond = 1000L * 60 * 1; // 20분만 토큰 유효
 	private long refreshTokenValidMilisecond = 1000L * 60 * 1440 * 14; // 2주간 토큰 유효
 
 	private final UserDetailsService userDetailsService;
@@ -95,14 +95,18 @@ public class JwtTokenProvider { // JWT 토큰을 생성 및 검증 모듈
 			TokenEntity updateTokenEntity = tokenRepository.findByUserId(userPk);
 			Calendar cal = Calendar.getInstance();
 			Date currentExpiredDate = updateTokenEntity.getExpiredDatetime();
-			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			
 			cal.setTime(new Date());
 			cal.add(Calendar.DATE, -2);
-			if(df.format(currentExpiredDate).compareTo(df.format(cal.getTime())) < 0) {
+			System.out.println("컥");
+			System.out.println(df.format(currentExpiredDate).compareTo(df.format(cal.getTime())));
+			System.out.println(df.format(currentExpiredDate));
+			System.out.println(df.format(cal.getTime()));
+			if(df.format(currentExpiredDate).compareTo(df.format(cal.getTime())) > 0) {
 				updateTokenEntity.setExpiredDatetime(expiredDate);
 				updateTokenEntity.setRefreshToken(refreshToken);
-				tokenRepository.save(updateTokenEntity);	
+				tokenRepository.save(updateTokenEntity);	 
 			}else {
 				refreshToken = updateTokenEntity.getRefreshToken();
 			}

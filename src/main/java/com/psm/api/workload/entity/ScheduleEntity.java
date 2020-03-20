@@ -15,13 +15,16 @@ import javax.persistence.Table;
 import org.hibernate.annotations.DynamicUpdate;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name="Tbl_schedule")
 @NoArgsConstructor
 @DynamicUpdate
-@Data
+@Getter
+@Setter
 public class ScheduleEntity {
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
@@ -29,17 +32,26 @@ public class ScheduleEntity {
 	private int scheduleIdx;
 	
 	@ManyToOne(optional = true, fetch = FetchType.LAZY)
-	@JoinColumn(name="workload_id", nullable = false, referencedColumnName = "workloadId", unique = true)
+	@JoinColumn(name="workload_id", nullable = false, referencedColumnName = "workloadId")
 	private WorkloadEntity workloadId;
 	
 	@Column(nullable = false, columnDefinition = "datetime2")
-	private Date fullReplicationStartdate;
+	private Date fullReplicationStartDate;
 	
 	@Column(nullable = false, columnDefinition = "datetime2")
-	private Date incrementalReplicationStartdate;
+	private Date fullReplicationFinishedDate;
+	
+	@Column(nullable = false, columnDefinition = "datetime2")
+	private Date incrementalReplicationStartDate;
+	
+	@Column(nullable = false, columnDefinition = "datetime2")
+	private Date incrementalReplicationFinishedDate;
 	
 	@Column(nullable = false)
-	private String scheduleStatus;
+	private int scheduleStatus;
+	
+	@Column(nullable = false)	//작업의 우선순위 설정
+	private String schedulePriority;
 	
 	@Column(nullable = false, columnDefinition = "datetime2")
 	private Date nextFullReplicationDate;
@@ -48,9 +60,15 @@ public class ScheduleEntity {
 	private Date nextIncrementalReplicationDate;
 	
 	@Column(nullable = true)
-	private String incrementalReplicationInterval;
+	private int incrementalReplicationInterval;
 	
 	@Column(nullable = true)
-	private String fullReplicationInterval;
+	private int fullReplicationInterval;
+	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String deletedYn;
+	
+	@Column(nullable = true, length = 200)
+	private String operationUri;
 	
 }
