@@ -66,7 +66,10 @@ public class ScheduleEntity {
 	private int fullReplicationInterval;
 	
 	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
-	private String deletedYn;
+	private String replicationDeletedYn;
+	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String incrementalDeletedYn;
 	
 	@Column(nullable = true, length = 200)
 	private String operationUri;

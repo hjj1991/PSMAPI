@@ -61,7 +61,7 @@ public class CronTable {
     @Transactional
     public void checkSchedule() throws Exception {
     	System.out.println("Current Thread : {}" + Thread.currentThread().getName());
-    	List<ScheduleEntity> scheduleEntityList = scheduleRepository.findByDeletedYn("N");
+    	List<ScheduleEntity> scheduleEntityList = scheduleRepository.findAll();
 
     	for(ScheduleEntity scheduleEntity : scheduleEntityList) {
 

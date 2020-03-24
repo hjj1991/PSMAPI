@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -581,88 +582,217 @@ public class WorkloadServiceImpl implements WorkloadService {
 		Date currentTime = sdf.parse(sdf.format(new Date()));
 
 		Date nextFullReplicationStartDate = sdf.parse(scheduleEntity.getNextFullReplicationDate().toString());
-		Date incrementalRplicationStartDate = sdf.parse(scheduleEntity.getIncrementalReplicationStartDate().toString());
+		Date nextIncrementalReplicationStartDate = sdf.parse(scheduleEntity.getNextIncrementalReplicationDate().toString());
 
-		if (currentTime.compareTo(nextFullReplicationStartDate) >= 0) {
+		//풀복제
+		if (currentTime.compareTo(nextFullReplicationStartDate) >= 0 && scheduleEntity.getReplicationDeletedYn().equals("N")) {
+			Calendar nextFullReplicationDate = Calendar.getInstance();
+			nextFullReplicationDate.setTime(currentTime);
+			nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			List<AvailableActionEntity> availableActionEntityList = availableActionRepository.findByWorkloadId(workloadId);
+			
 			if (scheduleEntity.getWorkloadId().getCurrentState().equals("Idle")) {
-				AvailableActionEntity fullReplicationActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "RunReplication");
-				AvailableActionEntity testFailOverActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "TestFailover");
+				AvailableActionEntity fullReplicationActionEntity = new AvailableActionEntity();
+				AvailableActionEntity testFailOverActionEntity = new AvailableActionEntity();
+				
+				for(AvailableActionEntity tempEntity : availableActionEntityList) {
+					if(tempEntity.getName().equals("RunReplication")) {
+						fullReplicationActionEntity = tempEntity;
+					}else if(tempEntity.getName().equals("TestFailover")) {
+						testFailOverActionEntity = tempEntity;
+					}
+				}
+				
 				if (scheduleEntity.getScheduleStatus() != 1 && fullReplicationActionEntity != null) { //현재 Idle 상태이며 아무 문제 없을때 Replication 진행
 					CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
 							passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, fullReplicationActionEntity.getUri());
-					if(actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK || actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
-						Date nowDate = new Date();	//스케줄이 시작한 날짜를 시작 날짜로 다시 정의한다.
-						HashMap<String, Object> responseResult = new HashMap<String, Object>();
-						responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
-						scheduleEntity.setScheduleStatus(1);
-						scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
-						scheduleEntity.setFullReplicationStartDate(nowDate);
-						scheduleRepository.save(scheduleEntity);
-						writeLogService.writeLogFile(workloadId, "Run Replication 시작!");
+					
+					if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
+						writeLogService.writeLogFile(workloadId, "요청 실패, 요청 URL:" + serverHost + fullReplicationActionEntity.getUri());
+						return;
 					}
+					
+					HashMap<String, Object> responseResult = new HashMap<String, Object>();
+					responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
+					scheduleEntity.setScheduleStatus(1);
+					scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
+					scheduleEntity.setFullReplicationStartDate(currentTime);
+					scheduleRepository.save(scheduleEntity);
+					writeLogService.writeLogFile(workloadId, "Run Replication 시작!");
+					
 				}else if(scheduleEntity.getScheduleStatus() == 1) { // 스케줄로 진행한 Replication이 종료되고 Idle 상태일때 TestFailOver 진행한다.				
 					CloseableHttpResponse operationResponse = ntlmGetPostService.getRequest(userNameToAccessProtectServer,
 							passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, scheduleEntity.getOperationUri());
-					if(operationResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-						WorkloadOperationDTO workloadOperationValue = mapper.readValue(EntityUtils.toString(operationResponse.getEntity()), WorkloadOperationDTO.class); 
-						if(workloadOperationValue.getIsFinished().equals("true") && workloadOperationValue.getIsSucceeded().equals("true")) {	//풀 리플리케이션이 정상 종료되었으면 Test FailOver 진행
-							writeLogService.writeLogFile(workloadId, "Run Replication이 정상 종료되었습니다.");
-							writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
-							CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
-									passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, testFailOverActionEntity.getUri());
-							if(actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK || actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
-								HashMap<String, Object> responseResult = new HashMap<String, Object>();
-								responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
-								scheduleEntity.setScheduleStatus(2);
-								scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
-								scheduleRepository.save(scheduleEntity);
-								writeLogService.writeLogFile(workloadId, "Test FailOver 시작!");	
-							}
-						}else if(workloadOperationValue.getIsFinished().equals("true") && !workloadOperationValue.getIsSucceeded().equals("true")) {
-							scheduleEntity.setScheduleStatus(0);
-							scheduleRepository.save(scheduleEntity);
-							writeLogService.writeLogFile(workloadId, "Run Replication이 실패하였습니다.");
-							writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
+					
+					//정상 요청 되지 않으면 종료
+					if(operationResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+						return;
+					
+					WorkloadOperationDTO workloadOperationValue = mapper.readValue(EntityUtils.toString(operationResponse.getEntity()), WorkloadOperationDTO.class);
+					
+					//작업이 아직 종료되지 않았다면 종료
+					if(!workloadOperationValue.getIsFinished().equals("true"))
+						return;
+					//풀 리플리케이션이 정상 종료되었으면 Test FailOver 진행
+					if(workloadOperationValue.getIsSucceeded().equals("true")) {	
+						writeLogService.writeLogFile(workloadId, "Run Replication이 정상 종료되었습니다.");
+						writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
+						CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
+								passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, testFailOverActionEntity.getUri());
+						
+						if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
+							writeLogService.writeLogFile(workloadId, "요청 실패, 요청 URL:" + serverHost + testFailOverActionEntity.getUri());
+							return;
 						}
+						
+						HashMap<String, Object> responseResult = new HashMap<String, Object>();
+						responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
+						scheduleEntity.setScheduleStatus(2);
+						scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
+						scheduleRepository.save(scheduleEntity);
+						writeLogService.writeLogFile(workloadId, "Test FailOver 시작!");	
+						
+					}else if(workloadOperationValue.getIsSucceeded().equals("false")) {
+						scheduleEntity.setScheduleStatus(0);
+						scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+						scheduleRepository.save(scheduleEntity);
+						writeLogService.writeLogFile(workloadId, "Run Replication이 실패하였습니다.");
+						writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
+						writeLogService.writeLogFile(workloadId, "다음 스케줄로 세팅됩니다.");
 					}
+					
 				}
 				
 			}else if(scheduleEntity.getScheduleStatus() == 2) { //TestFailover 진행중 상태체크
 				//현재상태 체크 호출
 				CloseableHttpResponse operationResponse = ntlmGetPostService.getRequest(userNameToAccessProtectServer,
 						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, scheduleEntity.getOperationUri());
-				if(operationResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-					WorkloadOperationDTO workloadOperationValue = mapper.readValue(EntityUtils.toString(operationResponse.getEntity()), WorkloadOperationDTO.class); 
-					//TestFailover 정상 완료됐을 경우
-					if(workloadOperationValue.getIsFinished().equals("true") && workloadOperationValue.getIsSucceeded().equals("true")) {
-						Date finishedDate = new Date(Long.parseLong(workloadOperationValue.getFinishedAt().substring(6, 19)) + 9*60*60*1000); //외국시간이라 9시간 더해줘야 한국시간임.
-						Calendar nextFullReplicationDate = Calendar.getInstance();
-						nextFullReplicationDate.setTime(scheduleEntity.getFullReplicationStartDate());
-						nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
-						scheduleEntity.setScheduleStatus(3);
-						scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
-						scheduleEntity.setFullReplicationFinishedDate(finishedDate);
-						scheduleRepository.save(scheduleEntity);
-						writeLogService.writeLogFile(workloadId, "Test FailOver 상태입니다.!");
+				if(operationResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+					return;
+				
+				WorkloadOperationDTO workloadOperationValue = mapper.readValue(EntityUtils.toString(operationResponse.getEntity()), WorkloadOperationDTO.class); 
+				//TestFailover 정상 완료됐을 경우
+				if(!workloadOperationValue.getIsFinished().equals("true"))
+					return;
+				
+				Date finishedDate = new Date(Long.parseLong(workloadOperationValue.getFinishedAt().substring(6, 19)) + 9*60*60*1000); //외국시간이라 9시간 더해줘야 한국시간임.
+				if(workloadOperationValue.getIsSucceeded().equals("true")) {					
+					scheduleEntity.setScheduleStatus(3);
+					scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+					scheduleEntity.setFullReplicationFinishedDate(finishedDate);
+					scheduleRepository.save(scheduleEntity);
+					writeLogService.writeLogFile(workloadId, "Test FailOver 상태입니다.!");
+					writeLogService.writeLogFile(workloadId, "다음 스케줄로 세팅됩니다.");
 						
-					}else if(workloadOperationValue.getIsFinished().equals("true") && workloadOperationValue.getIsSucceeded().equals("false")) {
-						writeLogService.writeLogFile(workloadId, "Test FailOver가 실패하였습니다.");
-						writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
-					}
+				}else if(workloadOperationValue.getIsSucceeded().equals("false")) {
+					scheduleEntity.setScheduleStatus(0);
+					scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+					scheduleEntity.setFullReplicationFinishedDate(finishedDate);
+					scheduleRepository.save(scheduleEntity);
+					writeLogService.writeLogFile(workloadId, "Test FailOver가 실패하였습니다.");
+					writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
+					writeLogService.writeLogFile(workloadId, "다음 스케줄로 세팅됩니다.");
 				}
+				
 			}else if(scheduleEntity.getWorkloadId().getCurrentState().equals("WaitingForCancelTestFailover")) {
 				AvailableActionEntity cancelFailoverActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "CancelFailover");
 				CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
 						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, cancelFailoverActionEntity.getUri());
-				if(actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK || actionResponse.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
-					HashMap<String, Object> responseResult = new HashMap<String, Object>();
-					responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
-					scheduleEntity.setScheduleStatus(0);
-					scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
-					scheduleRepository.save(scheduleEntity);
-					writeLogService.writeLogFile(workloadId, "스케줄 시간에 도달하여 Test FailOver 취소요청하였습니다.");
+				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
+					writeLogService.writeLogFile(workloadId, "요청 실패, 요청 URL:" + serverHost + cancelFailoverActionEntity.getUri());
+					return;
 				}
+					
+				HashMap<String, Object> responseResult = new HashMap<String, Object>();
+				responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
+				scheduleEntity.setScheduleStatus(0);
+				scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
+				scheduleRepository.save(scheduleEntity);
+				writeLogService.writeLogFile(workloadId, "스케줄 시간에 도달하여 Test FailOver 취소요청하였습니다.");
+					
 			}
+		//증분 복제
+		}else if(currentTime.compareTo(nextIncrementalReplicationStartDate) >= 0 && scheduleEntity.getIncrementalDeletedYn().equals("N")) {
+			Calendar nextIncrementalReplicationDate = Calendar.getInstance();
+			nextIncrementalReplicationDate.setTime(nextFullReplicationStartDate);
+			nextIncrementalReplicationDate.add(Calendar.MINUTE, scheduleEntity.getIncrementalReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			List<AvailableActionEntity> availableActionEntityList = availableActionRepository.findByWorkloadId(workloadId);
+			
+			if (scheduleEntity.getWorkloadId().getCurrentState().equals("Idle")) {
+				AvailableActionEntity incrementalAndTestFailOverActionEntity = new AvailableActionEntity();
+				
+				for(AvailableActionEntity tempEntity : availableActionEntityList) {
+					if(tempEntity.getName().equals("RunIncrementalAndTestFailover")) {
+						incrementalAndTestFailOverActionEntity = tempEntity;
+					}
+				}
+				
+				CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
+						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, incrementalAndTestFailOverActionEntity.getUri());
+					
+				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
+					writeLogService.writeLogFile(workloadId, "요청 실패, 요청 URL:" + serverHost + incrementalAndTestFailOverActionEntity.getUri());
+					return;
+				}
+					
+				HashMap<String, Object> responseResult = new HashMap<String, Object>();
+				responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
+				scheduleEntity.setIncrementalReplicationStartDate(currentTime);
+				scheduleEntity.setScheduleStatus(2);
+				scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
+				scheduleEntity.setFullReplicationStartDate(currentTime);
+				scheduleRepository.save(scheduleEntity);
+				writeLogService.writeLogFile(workloadId, "Run Incremental And TestFailOver 시작!");
+					
+			}else if(scheduleEntity.getScheduleStatus() == 2) { //TestFailover 진행중 상태체크
+				//현재상태 체크 호출
+				CloseableHttpResponse operationResponse = ntlmGetPostService.getRequest(userNameToAccessProtectServer,
+						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, scheduleEntity.getOperationUri());
+				if(operationResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+					return;
+				
+				WorkloadOperationDTO workloadOperationValue = mapper.readValue(EntityUtils.toString(operationResponse.getEntity()), WorkloadOperationDTO.class); 
+				//TestFailover 정상 완료됐을 경우
+				if(!workloadOperationValue.getIsFinished().equals("true"))
+					return;
+				
+				Date finishedDate = new Date(Long.parseLong(workloadOperationValue.getFinishedAt().substring(6, 19)) + 9*60*60*1000); //외국시간이라 9시간 더해줘야 한국시간임.
+				if(workloadOperationValue.getIsSucceeded().equals("true")) {					
+					scheduleEntity.setScheduleStatus(3);
+					scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());
+					scheduleEntity.setIncrementalReplicationFinishedDate(finishedDate);
+					scheduleRepository.save(scheduleEntity);
+					writeLogService.writeLogFile(workloadId, "Test FailOver 상태입니다.!");
+					writeLogService.writeLogFile(workloadId, "다음 스케줄로 세팅됩니다.");
+						
+				}else if(workloadOperationValue.getIsSucceeded().equals("false")) {
+					scheduleEntity.setScheduleStatus(0);
+					scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());
+					scheduleEntity.setIncrementalReplicationFinishedDate(finishedDate);
+					scheduleRepository.save(scheduleEntity);
+					writeLogService.writeLogFile(workloadId, "RunIncremental And Test FailOver가 실패하였습니다.");
+					writeLogService.writeLogFile(workloadId, workloadOperationValue.getOperationResults().toString());
+					writeLogService.writeLogFile(workloadId, "다음 스케줄로 세팅됩니다.");
+				}
+				
+			}else if(scheduleEntity.getWorkloadId().getCurrentState().equals("WaitingForCancelTestFailover")) {
+				AvailableActionEntity cancelFailoverActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "CancelFailover");
+				CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
+						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, cancelFailoverActionEntity.getUri());
+				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
+					writeLogService.writeLogFile(workloadId, "요청 실패, 요청 URL:" + serverHost + cancelFailoverActionEntity.getUri());
+					return;
+				}
+					
+				HashMap<String, Object> responseResult = new HashMap<String, Object>();
+				responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
+				scheduleEntity.setScheduleStatus(0);
+				scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
+				scheduleRepository.save(scheduleEntity);
+				writeLogService.writeLogFile(workloadId, "스케줄 시간에 도달하여 Test FailOver 취소요청하였습니다.");
+				
+			}
+			
 		}
 
 	}
