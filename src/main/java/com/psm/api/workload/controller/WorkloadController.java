@@ -15,6 +15,7 @@ import com.psm.api.common.response.SingleResult;
 import com.psm.api.common.response.service.ResponseService;
 import com.psm.api.user.dto.FindUserDto;
 import com.psm.api.workload.dto.FindWorkloadDto;
+import com.psm.api.workload.dto.RequestScheduleDTO;
 import com.psm.api.workload.dto.WorkloadsDto;
 import com.psm.api.workload.service.WorkloadService;
 
@@ -67,6 +68,22 @@ public class WorkloadController {
 //		}else {
 			return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
 //		}
+
+	}
+	
+	@ApiImplicitParams({
+		@ApiImplicitParam(name = "X_AUTH_TOKEN", value = "로그인 성공 후 access_token", required = true, dataType = "String", paramType = "header") })
+	@ApiOperation(value = "스케줄 생성", notes = "스케줄 생성")
+	@PostMapping(value = "/workload/schedule")
+	public SingleResult<?> postWorkloadSchedule(@RequestBody RequestScheduleDTO requestScheduleDTO) throws Exception {
+		// 결과데이터가 여러건인경우 getListResult를 이용해서 결과를 출력한다.
+		HashMap<String, Object> result = new HashMap<>();
+		result = workloadService.postWorkloadSchedule(requestScheduleDTO);
+		if(Boolean.valueOf((boolean) result.get("success")).booleanValue() == true) {
+			return responseService.getSingleResult(result.get("data"));
+		}else {
+			return responseService.getSingleResult(result.get("data"), Integer.parseInt(result.get("status").toString()), (String)result.get("resultMsg"), Boolean.valueOf((boolean) result.get("success")).booleanValue());
+		}
 
 	}
 }

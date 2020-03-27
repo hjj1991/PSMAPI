@@ -7,6 +7,7 @@ import org.springframework.boot.configurationprocessor.json.JSONObject;
 
 import com.psm.api.apiserver.entity.ApiServerListEntity;
 import com.psm.api.workload.dto.FindWorkloadDto;
+import com.psm.api.workload.dto.RequestScheduleDTO;
 import com.psm.api.workload.dto.WorkloadsDto;
 import com.psm.api.workload.entity.ScheduleEntity;
 
@@ -18,4 +19,6 @@ public interface WorkloadService {
 	void asyncWorkload(ApiServerListEntity apiserverInfo);
 	
 	void scheduleWorkloadAction(ScheduleEntity scheduleEntity) throws Exception;
+
+	HashMap<String, Object> postWorkloadSchedule(RequestScheduleDTO requestScheduleDTO) throws Exception;
 }
