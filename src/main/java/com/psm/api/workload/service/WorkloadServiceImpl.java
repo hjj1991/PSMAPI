@@ -93,27 +93,10 @@ public class WorkloadServiceImpl implements WorkloadService {
 		HashMap<String, String> list = new HashMap<String, String>();
 		HashMap<String, Object> result = new HashMap<String, Object>();
 
-		CloseableHttpClient httpClient = HttpClients.createDefault();
-		HttpPost httpPost = new HttpPost(actionUrl);
-		HttpHost target = new HttpHost(serverHost, 80, "http");
-		StringEntity postParams = new StringEntity("{\n}");
-
-		CredentialsProvider credsProvider = new BasicCredentialsProvider();
-		credsProvider.setCredentials(AuthScope.ANY, new NTCredentials(userNameToAccessProtectServer,
-				passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost));
-
-		// Make sure the same context is used to execute logically related requests
-		HttpClientContext context = HttpClientContext.create();
-		context.setCredentialsProvider(credsProvider);
-
-		// Execute a cheap method first. This will trigger NTLM authentication
-		httpPost.setHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
-		httpPost.setHeader("Content-type", "application/json");
-		httpPost.setEntity(postParams);
 		CloseableHttpResponse response = null;
 
 		try {
-			response = httpClient.execute(target, httpPost, context);
+			response = ntlmGetPostService.postRequest(userNameToAccessProtectServer, passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, actionUrl);
 			System.out.println(response.getStatusLine());
 			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK
 					|| response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
@@ -121,15 +104,9 @@ public class WorkloadServiceImpl implements WorkloadService {
 				list = mapper.readValue(EntityUtils.toString(response.getEntity()),
 						new TypeReference<HashMap<String, String>>() {
 						});
-
-				HttpGet httpget = new HttpGet("/protectionservices/Workloads/" + workloadId);
-				httpget.addHeader("Accept", "application/vnd.netiq.platespin.protect.ServerConfiguration+json");
-				CloseableHttpResponse response2 = httpClient.execute(target, httpget, context);
-				System.out.println("켁");
-				System.out.println(workloadId);
-				System.out.println(response2.getStatusLine());
+//				CloseableHttpResponse response2 = httpClient.execute(target, httpget, context);
+				CloseableHttpResponse response2 = ntlmGetPostService.getRequest(userNameToAccessProtectServer, passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, "/protectionservices/Workloads/" + workloadId);
 				if (response2.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-					System.out.println("켁2");
 					WorkloadDto tmpWorkload = mapper.readValue(EntityUtils.toString(response2.getEntity(), "UTF-8"),
 							WorkloadDto.class);
 
@@ -564,7 +541,6 @@ public class WorkloadServiceImpl implements WorkloadService {
 	@Async
 	public void scheduleWorkloadAction(ScheduleEntity scheduleEntity) throws Exception {
 		String workloadName = scheduleEntity.getWorkloadId().getName();
-		System.out.println("Thread : " + Thread.currentThread().getName() + "///" + scheduleEntity.getWorkloadId().getWorkloadId());
 		writeLogService.createLogFile(workloadName);
 		// TODO Auto-generated method stub
 		String serverHost = scheduleEntity.getWorkloadId().getServerHost();
@@ -582,6 +558,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Date currentTime = sdf.parse(sdf.format(new Date()));
+		Calendar currentCalendarDate = Calendar.getInstance();
+		currentCalendarDate.setTime(currentTime);
 		Date nextFullReplicationStartDate = null;
 		Date nextIncrementalReplicationStartDate = null;
 
@@ -592,12 +570,21 @@ public class WorkloadServiceImpl implements WorkloadService {
 		if(scheduleEntity.getNextIncrementalReplicationDate() != null) {
 			nextIncrementalReplicationStartDate = sdf.parse(scheduleEntity.getNextIncrementalReplicationDate().toString());
 		}
+		
+		if(scheduleEntity.getFullReplicationDeletedYn().equals("N") && currentTime.compareTo(nextFullReplicationStartDate) >= 0) {
+			Calendar nextFullReplicationDate = Calendar.getInstance();	//다음 풀복제 시간을 Calendar 형식으로 선언하기 위해 필요함.
+			nextFullReplicationDate.setTime(nextFullReplicationStartDate);
+			while(currentCalendarDate.compareTo(nextFullReplicationDate) >= 0) {
+				nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			}				
+			scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+			scheduleEntity.setFullWorkingStatus("Y");
+			scheduleRepository.save(scheduleEntity);
+		}
 
 		//풀복제
-		if (scheduleEntity.getFullReplicationDeletedYn().equals("N") && currentTime.compareTo(nextFullReplicationStartDate) >= 0) {
-			Calendar nextFullReplicationDate = Calendar.getInstance();
-			nextFullReplicationDate.setTime(currentTime);
-			nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+		if (scheduleEntity.getFullReplicationDeletedYn().equals("N") && scheduleEntity.getFullWorkingStatus().equals("Y")) {
+		
 			List<AvailableActionEntity> availableActionEntityList = availableActionRepository.findByWorkloadId(workloadId);
 			
 			if (scheduleEntity.getWorkloadId().getCurrentState().equals("Idle")) {
@@ -663,13 +650,18 @@ public class WorkloadServiceImpl implements WorkloadService {
 						
 					}else if(workloadOperationValue.getIsSucceeded().equals("false")) {
 						scheduleEntity.setScheduleStatus(0);
-						scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+						scheduleEntity.setFullWorkingStatus("N");
+//						scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
 						scheduleRepository.save(scheduleEntity);
 						writeLogService.writeLogFile(workloadName, "Run Replication이 실패하였습니다.");
 						writeLogService.writeLogFile(workloadName, workloadOperationValue.getOperationResults().toString());
 						writeLogService.writeLogFile(workloadName, "다음 스케줄로 세팅됩니다.");
 					}
 					
+				}
+				
+				if(syncWorkload(serverHost, workloadId) == false) {
+					writeLogService.writeLogFile(workloadName, "워크로드 새로고침 실패!");
 				}
 				
 			}else if(scheduleEntity.getScheduleStatus() == 2) { //TestFailover 진행중 상태체크
@@ -687,7 +679,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 				Date finishedDate = new Date(Long.parseLong(workloadOperationValue.getFinishedAt().substring(6, 19)) + 9*60*60*1000); //외국시간이라 9시간 더해줘야 한국시간임.
 				if(workloadOperationValue.getIsSucceeded().equals("true")) {					
 					scheduleEntity.setScheduleStatus(3);
-					scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+//					scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+					scheduleEntity.setFullWorkingStatus("N");
 					scheduleEntity.setFullReplicationFinishedDate(finishedDate);
 					scheduleRepository.save(scheduleEntity);
 					writeLogService.writeLogFile(workloadName, "Test FailOver 상태입니다.!");
@@ -695,7 +688,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 						
 				}else if(workloadOperationValue.getIsSucceeded().equals("false")) {
 					scheduleEntity.setScheduleStatus(0);
-					scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+//					scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
+					scheduleEntity.setFullWorkingStatus("N");
 					scheduleEntity.setFullReplicationFinishedDate(finishedDate);
 					scheduleRepository.save(scheduleEntity);
 					writeLogService.writeLogFile(workloadName, "Test FailOver가 실패하였습니다.");
@@ -708,7 +702,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 				CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
 						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, cancelFailoverActionEntity.getUri());
 				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
-//					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + cancelFailoverActionEntity.getUri());
+					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + cancelFailoverActionEntity.getUri());
 					return;
 				}
 					
@@ -718,13 +712,38 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
 				scheduleRepository.save(scheduleEntity);
 				writeLogService.writeLogFile(workloadName, "스케줄 시간에 도달하여 Test FailOver 취소요청하였습니다.");
+				
+				if(syncWorkload(serverHost, workloadId) == false) {
+					writeLogService.writeLogFile(workloadName, "워크로드 새로고침 실패!");
+				}
 					
+			}else if(scheduleEntity.getWorkloadId().getCurrentState().equals("RunningIncrementalAndTestFailover")) {
+				AvailableActionEntity avortActionEntity = availableActionRepository.findTopByWorkloadIdAndName(workloadId, "Abort");
+				CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
+						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, avortActionEntity.getUri());
+				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
+					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + avortActionEntity.getUri());
+					return;
+				}
+				
+				scheduleEntity.setScheduleStatus(0);
+				scheduleEntity.setOperationUri(null);
+				
+				scheduleRepository.save(scheduleEntity);
+				writeLogService.writeLogFile(workloadName, "스케줄 시간에 도달하였으나, RunningIncrementalAndTestFailover중이기 때문에 취소요청 하였습니다.");	
+				if(syncWorkload(serverHost, workloadId) == false) {
+					writeLogService.writeLogFile(workloadName, "워크로드 새로고침 실패!");
+				}
+				
 			}
 		//증분 복제
 		}else if(scheduleEntity.getIncrementalReplicationDeletedYn().equals("N") &&currentTime.compareTo(nextIncrementalReplicationStartDate) >= 0 ) {
 			Calendar nextIncrementalReplicationDate = Calendar.getInstance();
 			nextIncrementalReplicationDate.setTime(nextIncrementalReplicationStartDate);
-			nextIncrementalReplicationDate.add(Calendar.MINUTE, scheduleEntity.getIncrementalReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			while(currentCalendarDate.compareTo(nextIncrementalReplicationDate) >= 0) {
+				nextIncrementalReplicationDate.add(Calendar.MINUTE, scheduleEntity.getIncrementalReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			}	
+			
 			List<AvailableActionEntity> availableActionEntityList = availableActionRepository.findByWorkloadId(workloadId);
 			
 			if (scheduleEntity.getWorkloadId().getCurrentState().equals("Idle")) {
@@ -740,19 +759,23 @@ public class WorkloadServiceImpl implements WorkloadService {
 						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, incrementalAndTestFailOverActionEntity.getUri());
 					
 				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
-//					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + incrementalAndTestFailOverActionEntity.getUri());
+					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + incrementalAndTestFailOverActionEntity.getUri());
 					return;
 				}
 					
 				HashMap<String, Object> responseResult = new HashMap<String, Object>();
 				responseResult = mapper.readValue(EntityUtils.toString(actionResponse.getEntity()), new TypeReference<HashMap<String, Object>>() {});
 				scheduleEntity.setIncrementalReplicationStartDate(currentTime);
-				scheduleEntity.setScheduleStatus(2);
+				scheduleEntity.setScheduleStatus(4);
 				scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
 				scheduleRepository.save(scheduleEntity);
 				writeLogService.writeLogFile(workloadName, "Run Incremental And TestFailOver 시작!");
+				
+				if(syncWorkload(serverHost, workloadId) == false) {
+					writeLogService.writeLogFile(workloadName, "워크로드 새로고침 실패!");
+				}
 					
-			}else if(scheduleEntity.getScheduleStatus() == 2) { //TestFailover 진행중 상태체크
+			}else if(scheduleEntity.getScheduleStatus() == 4) { //TestFailover 진행중 상태체크
 				//현재상태 체크 호출
 				CloseableHttpResponse operationResponse = ntlmGetPostService.getRequest(userNameToAccessProtectServer,
 						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, scheduleEntity.getOperationUri());
@@ -788,7 +811,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 				CloseableHttpResponse actionResponse = ntlmGetPostService.postRequest(userNameToAccessProtectServer,
 						passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, cancelFailoverActionEntity.getUri());
 				if(actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_OK && actionResponse.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
-//					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + cancelFailoverActionEntity.getUri());
+					writeLogService.writeLogFile(workloadName, "요청 실패, 요청 URL:" + serverHost + cancelFailoverActionEntity.getUri());
 					return;
 				}
 					
@@ -798,6 +821,10 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setOperationUri(responseResult.get("OperationUri").toString());
 				scheduleRepository.save(scheduleEntity);
 				writeLogService.writeLogFile(workloadName, "스케줄 시간에 도달하여 Test FailOver 취소요청하였습니다.");
+				
+				if(syncWorkload(serverHost, workloadId) == false) {
+					writeLogService.writeLogFile(workloadName, "워크로드 새로고침 실패!");
+				}
 				
 			}
 			
@@ -822,7 +849,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setFullReplicationDeletedYn(requestScheduleDTO.getFullReplicationDeletedYn());
 			}else if(requestScheduleDTO.getFullReplicationDeletedYn().equals("Y")) {
 				scheduleEntity.setFullReplicationDeletedYn(requestScheduleDTO.getFullReplicationDeletedYn());
-				scheduleEntity.setFullReplicationInterval(0);
+//				scheduleEntity.setFullReplicationInterval(0);
 				scheduleEntity.setNextFullReplicationDate(null);
 			}
 			
@@ -832,7 +859,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setIncrementalReplicationDeletedYn(requestScheduleDTO.getIncrementalReplicationDeletedYn());
 			}else if(requestScheduleDTO.getIncrementalReplicationDeletedYn().equals("Y")) {
 				scheduleEntity.setIncrementalReplicationDeletedYn(requestScheduleDTO.getIncrementalReplicationDeletedYn());
-				scheduleEntity.setIncrementalReplicationInterval(0);
+//				scheduleEntity.setIncrementalReplicationInterval(0);
 				scheduleEntity.setNextIncrementalReplicationDate(null);
 			}
 			
@@ -856,7 +883,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setFullReplicationDeletedYn(requestScheduleDTO.getFullReplicationDeletedYn());
 			}else if(requestScheduleDTO.getFullReplicationDeletedYn().equals("Y")) {
 				scheduleEntity.setFullReplicationDeletedYn(requestScheduleDTO.getFullReplicationDeletedYn());
-				scheduleEntity.setFullReplicationInterval(0);
+//				scheduleEntity.setFullReplicationInterval(0);
 				scheduleEntity.setNextFullReplicationDate(null);
 			}
 			
@@ -866,7 +893,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setIncrementalReplicationDeletedYn(requestScheduleDTO.getIncrementalReplicationDeletedYn());
 			}else if(requestScheduleDTO.getIncrementalReplicationDeletedYn().equals("Y")) {
 				scheduleEntity.setIncrementalReplicationDeletedYn(requestScheduleDTO.getIncrementalReplicationDeletedYn());
-				scheduleEntity.setIncrementalReplicationInterval(0);
+//				scheduleEntity.setIncrementalReplicationInterval(0);
 				scheduleEntity.setNextIncrementalReplicationDate(null);
 			}
 			
@@ -876,5 +903,89 @@ public class WorkloadServiceImpl implements WorkloadService {
 		}
 		
 		return result;
+	}
+	
+	
+	@Override
+	public boolean syncWorkload(String serverHost, String workloadId) throws Exception {
+		ApiServerListEntity apiserverInfo = apiServerListRepository.findByServerHostAndDeletedYn(serverHost, "N");
+		String userNameToAccessProtectServer = apiserverInfo.getUserNameToAccessProtectServer();
+		String passwordToAccessProtectServer = apiserverInfo.getPasswordToAccessProtectServer();
+		String domainNameToAccessProtectServer = apiserverInfo.getDomainNameToAccessProtectServer();
+		ObjectMapper mapper = new ObjectMapper();
+	
+		CloseableHttpResponse response2 = ntlmGetPostService.getRequest(userNameToAccessProtectServer, passwordToAccessProtectServer, domainNameToAccessProtectServer, serverHost, "/protectionservices/Workloads/" + workloadId);
+		if (response2.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+			WorkloadDto tmpWorkload = mapper.readValue(EntityUtils.toString(response2.getEntity(), "UTF-8"),
+					WorkloadDto.class);
+
+			WorkloadEntity workloadEntity = workloadRepository.findByWorkloadId(workloadId);
+			workloadEntity = workloadRepository.findByWorkloadId(workloadId);
+			workloadEntity.setServerHost(apiserverInfo.getServerHost());
+			workloadEntity.setCurrentState(tmpWorkload.getCurrentState());
+			workloadEntity.setMachineName(tmpWorkload.getMachineName());
+			workloadEntity.setName(tmpWorkload.getName());
+			workloadEntity.setOnline(tmpWorkload.getOnline());
+			workloadEntity.setOperatingSystem(tmpWorkload.getOperatingSystem());
+			workloadEntity.setOperatingSystemVersion(tmpWorkload.getOperatingSystemVersion());
+			workloadEntity.setServicePack(tmpWorkload.getParameters().get(20).get("Value"));
+			workloadEntity.setSourceMachinId(tmpWorkload.getParameters().get(21).get("Value"));
+			workloadEntity.setUserName(tmpWorkload.getParameters().get(0).get("Value"));
+			workloadEntity.setDiscoveryAddress(tmpWorkload.getParameters().get(1).get("Value"));
+			workloadEntity.setAreBBTollsInstalled(tmpWorkload.getParameters().get(2).get("Value"));
+			workloadEntity.setReadyToCopySnapshotName(tmpWorkload.getParameters().get(3).get("Value"));
+			workloadEntity.setCanDeleteVm(tmpWorkload.getParameters().get(4).get("Value"));
+			workloadEntity.setCanRemoveSource(tmpWorkload.getParameters().get(5).get("Value"));
+			workloadEntity.setCanRemoveBBT(tmpWorkload.getParameters().get(6).get("Value"));
+			workloadEntity.setRunFailoverOnReplicationSuccess(tmpWorkload.getParameters().get(7).get("Value"));
+			workloadEntity.setIsRemoteWorkload(tmpWorkload.getParameters().get(8).get("Value"));
+			workloadEntity.setIsWindowsCluster(tmpWorkload.getParameters().get(9).get("Value"));
+			workloadEntity.setLastFullOn(tmpWorkload.getParameters().get(10).get("Value"));
+			workloadEntity.setLastIncrementalOn(tmpWorkload.getParameters().get(11).get("Value"));
+			workloadEntity.setLastTestedFailoverOn(tmpWorkload.getParameters().get(12).get("Value"));
+			workloadEntity.setLastUpdated(tmpWorkload.getParameters().get(13).get("Value"));
+			workloadEntity.setFailoverMachineId(tmpWorkload.getParameters().get(14).get("Value"));
+			workloadEntity.setNextFullOn(tmpWorkload.getParameters().get(15).get("Value"));
+			workloadEntity.setNextIncrementalOn(tmpWorkload.getParameters().get(16).get("Value"));
+			workloadEntity.setOnlineStatus(tmpWorkload.getParameters().get(17).get("Value"));
+			workloadEntity.setProtectionLevel(tmpWorkload.getParameters().get(22).get("Value"));
+			workloadEntity.setProtectionState(tmpWorkload.getParameters().get(23).get("Value"));
+			workloadEntity.setTargetPRO(tmpWorkload.getParameters().get(24).get("Value"));
+			workloadEntity.setWorkflowStep(tmpWorkload.getParameters().get(25).get("Value"));
+			workloadEntity.setWorkloadLifecycle(tmpWorkload.getParameters().get(26).get("Value"));
+			workloadEntity.setWorkloadGroupId(tmpWorkload.getParameters().get(27).get("Value"));
+			workloadEntity.setReplicationScheduleStatus(tmpWorkload.getParameters().get(28).get("Value"));
+			workloadEntity.setSourceMachineControllerAlias(tmpWorkload.getParameters().get(29).get("Value"));
+			workloadEntity
+					.setPrepareForFailoverConfigurationUri(tmpWorkload.getPrepareForFailoverConfigurationUri());
+			workloadEntity.setScheduleActive(tmpWorkload.getScheduleActive());
+			workloadEntity.setSchedulesUri(tmpWorkload.getSchedulesUri());
+			workloadEntity.setTag(tmpWorkload.getTag());
+			workloadEntity.setTestCutoverMarkedSuccessful(tmpWorkload.getTestCutoverMarkedSuccessful());
+			workloadEntity.setTestFailoverConfigurationUri(tmpWorkload.getTestFailoverConfigurationUri());
+			workloadEntity.setTmData(tmpWorkload.getTmData());
+			workloadEntity.setWindowsServiceUri(tmpWorkload.getWindowsServicesUri());
+			workloadEntity.setWorkloadConfigurationUri(tmpWorkload.getWorkloadConfigurationUri());
+			workloadEntity.setCompanyIdx(apiserverInfo.getCompanyIdx());
+			workloadEntity.setSyncDate(new Date());
+			workloadRepository.save(workloadEntity);
+			// 해당 워크로드ID로 워크로드 액션 삭제
+			availableActionRepository.deleteInBatch(availableActionRepository.findByWorkloadId(workloadId));
+			// 사용가능한 워크로드 액션들을 insert한다.
+			for (int availableCount = 0; availableCount < tmpWorkload.getAvailableTransitions()
+					.size(); availableCount++) {
+				AvailableActionEntity tempAvailableActionEntity = new AvailableActionEntity();
+				tempAvailableActionEntity
+						.setName(tmpWorkload.getAvailableTransitions().get(availableCount).get("Name"));
+				tempAvailableActionEntity
+						.setUri(tmpWorkload.getAvailableTransitions().get(availableCount).get("Uri"));
+				tempAvailableActionEntity.setWorkloadId(workloadId);
+				availableActionRepository.save(tempAvailableActionEntity);
+			}
+			
+			return true;
+		}
+		
+		return false;
 	}
 }

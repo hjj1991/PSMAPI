@@ -45,25 +45,7 @@ public class ScheduleEntity {
 	private Date fullReplicationFinishedDate;
 	
 	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date incrementalReplicationStartDate;
-	
-	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date incrementalReplicationFinishedDate;
-	
-	@Column(nullable = false, columnDefinition = "int default 0")
-	private int scheduleStatus;
-	
-	@Column(nullable = true)	//작업의 우선순위 설정
-	private String schedulePriority;
-	
-	@Column(nullable = true, columnDefinition = "datetime2")
 	private Date nextFullReplicationDate;
-	
-	@Column(nullable = true, columnDefinition = "datetime2")
-	private Date nextIncrementalReplicationDate;
-	
-	@Column(nullable = false, columnDefinition = "int default 0")
-	private int incrementalReplicationInterval;
 	
 	@Column(nullable = false, columnDefinition = "int default 0")
 	private int fullReplicationInterval;
@@ -72,8 +54,29 @@ public class ScheduleEntity {
 	private String fullReplicationDeletedYn;
 	
 	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String fullWorkingStatus;
+	
+	@Column(nullable = true, columnDefinition = "datetime2")
+	private Date incrementalReplicationStartDate;
+	
+	@Column(nullable = true, columnDefinition = "datetime2")
+	private Date incrementalReplicationFinishedDate;
+	
+	@Column(nullable = true, columnDefinition = "datetime2")
+	private Date nextIncrementalReplicationDate;
+	
+	@Column(nullable = false, columnDefinition = "int default 0")
+	private int incrementalReplicationInterval;
+	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
 	private String incrementalReplicationDeletedYn;
 	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String increWorkingStatus;
+	
+	@Column(nullable = false, columnDefinition = "int default 0")
+	private int scheduleStatus;
+
 	@Column(nullable = true, length = 200)
 	private String operationUri;
 	

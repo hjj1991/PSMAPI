@@ -14,14 +14,22 @@ public class WriteLogService {
 	
 	@Value("${psm.schedule.logpath}")
 	private String folderPath;
+
 	
+
 	public void createLogFile(String workloadId) throws IOException {
+	
+		SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMM");
+		String folderPath2 = folderPath + sdf2.format(new Date()).toString().substring(0, 4) + "\\" + sdf2.format(new Date()).toString().substring(4, 6) + "\\";
+
+		System.out.println("바보냐");
+		System.out.println(folderPath2);
 		
-		File path = new File(folderPath);
-		File file = new File(folderPath + workloadId + ".txt");
+		File path = new File(folderPath2);
+		File file = new File(folderPath2 + workloadId + ".txt");
 		
 		if(!path.exists()) {
-			path.mkdir(); //폴더 생성합니다.
+			path.mkdirs(); //폴더 생성합니다.
 		}
 		
 		if(!file.exists()){
@@ -30,7 +38,10 @@ public class WriteLogService {
 	}
 	
 	public void writeLogFile(String workloadId, String msg){
-		File file = new File(folderPath + workloadId + ".txt");
+		SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMM");
+		String folderPath2 = folderPath + sdf2.format(new Date()).toString().substring(0, 4) + "\\" + sdf2.format(new Date()).toString().substring(4, 6) + "\\";
+
+		File file = new File(folderPath2 + workloadId + ".txt");
 		FileWriter writer = null;
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		

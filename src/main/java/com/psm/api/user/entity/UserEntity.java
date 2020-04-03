@@ -56,10 +56,10 @@ public class UserEntity implements UserDetails  {
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
 	
-	@Column(nullable = false, unique = true, length = 60)
+	@Column(nullable = false, unique = true, length = 100)
 	private String userId;
 	
-	@Column(nullable = false, length = 60)
+	@Column(nullable = false, length = 100)
 	private String name;
 	
 	
@@ -67,13 +67,13 @@ public class UserEntity implements UserDetails  {
 	@JsonIgnore
 	private String userPw;
 	
-	@Column(nullable = false, length = 20)
+	@Column(nullable = false, length = 100)
 	private String userTel;
 	
-	@Column(nullable = false, length = 20)
+	@Column(nullable = false, length = 100)
 	private String userPhone;
 	
-	@Column(nullable = false, length = 20)
+	@Column(nullable = false, length = 100)
 	private String userEmail;
 	
 	@Column(nullable = false, columnDefinition = "datetime2 default getdate()")

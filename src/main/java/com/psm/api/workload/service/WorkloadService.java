@@ -21,4 +21,6 @@ public interface WorkloadService {
 	void scheduleWorkloadAction(ScheduleEntity scheduleEntity) throws Exception;
 
 	HashMap<String, Object> postWorkloadSchedule(RequestScheduleDTO requestScheduleDTO) throws Exception;
+
+	boolean syncWorkload(String serverHost, String workloadId) throws Exception;
 }
