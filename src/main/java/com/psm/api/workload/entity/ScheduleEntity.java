@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -25,6 +26,7 @@ import lombok.Setter;
 @Table(name="Tbl_schedule")
 @NoArgsConstructor
 @DynamicUpdate
+@DynamicInsert
 @Getter
 @Setter
 public class ScheduleEntity {
@@ -73,6 +75,36 @@ public class ScheduleEntity {
 	
 	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
 	private String increWorkingStatus;
+	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String workoutUsedYn;
+	
+	@Column(nullable=true)
+	private String workoutType;
+	
+	@Column(nullable=true)
+	private String workoutStartDate;
+	
+	@Column(nullable=true)
+	private String workoutStartTime;
+	
+	@Column(nullable=true)
+	private String workoutEndDate;
+	
+	@Column(nullable=true)
+	private String workoutEndTime;
+	
+	@Column(nullable=false, columnDefinition = "int default 0")
+	private int workoutContinuousTime;
+	
+	@Column(nullable = false, columnDefinition = "int default 0")
+	private int workoutInterval;
+	
+	@Column(nullable=true)
+	private String workoutDetailOption;
+	
+	@Column(nullable=false, columnDefinition = "char(1) default 'N'")
+	private String workoutStatus;
 	
 	@Column(nullable = false, columnDefinition = "int default 0")
 	private int scheduleStatus;

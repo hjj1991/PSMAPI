@@ -32,6 +32,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.commonj.ScheduledTimerListener;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -534,12 +535,75 @@ public class WorkloadServiceImpl implements WorkloadService {
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		System.out.println("끝났어!!!" + Thread.currentThread().getName());
 	}
 
 	@Override
 	@Async
 	public void scheduleWorkloadAction(ScheduleEntity scheduleEntity) throws Exception {
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");		
+		if(scheduleEntity.getWorkoutUsedYn().equals("Y")) {
+			String workoutType = scheduleEntity.getWorkoutType();
+
+			Date todayDate = dateFormat.parse(dateFormat.format(new Date()));
+			Date todayTime = timeFormat.parse(timeFormat.format(new Date()));
+			Date todayDateTime = sdf.parse(sdf.format(new Date()));
+			Date workoutStartDate = dateFormat.parse(scheduleEntity.getWorkoutStartDate());
+			Date workoutEndDate = dateFormat.parse(scheduleEntity.getWorkoutEndDate());
+			Date workoutStartTime = timeFormat.parse(scheduleEntity.getWorkoutStartTime());
+			Date workoutEndTime = timeFormat.parse(scheduleEntity.getWorkoutEndTime());
+			Date workoutStartDateTime = sdf.parse(scheduleEntity.getWorkoutStartDate() + " " + scheduleEntity.getWorkoutStartTime());
+			switch(workoutType) {
+				case "Daily":
+					if(scheduleEntity.getWorkoutDetailOption().equals("weekday")) {
+						Calendar tempWorkoutStartDateTime = Calendar.getInstance();
+						tempWorkoutStartDateTime.setTime(new Date());
+						int dayOfWeek = tempWorkoutStartDateTime.get(Calendar.DAY_OF_WEEK);
+						if(workoutStartTime.compareTo(workoutEndTime) < 0) {
+							if(dayOfWeek >=2 && dayOfWeek <=6 && todayTime.compareTo(workoutStartTime) > 0 && todayTime.compareTo(workoutEndTime) < 0 && scheduleEntity.getWorkoutStatus().equals("N")) {
+								scheduleEntity.setWorkoutStatus("Y");
+								scheduleRepository.save(scheduleEntity);
+							}else if(scheduleEntity.getWorkoutStatus().equals("Y")) {
+								scheduleEntity.setWorkoutStatus("N");
+								scheduleRepository.save(scheduleEntity);
+							}
+						}else {
+							if((dayOfWeek >=2 && dayOfWeek <=6 && todayTime.compareTo(workoutStartTime) >= 0) || (dayOfWeek >=2 && dayOfWeek <=7 && todayTime.compareTo(workoutEndTime) <= 0)) {
+								scheduleEntity.setWorkoutStatus("Y");
+								scheduleRepository.save(scheduleEntity);
+							}else if(scheduleEntity.getWorkoutStatus().equals("Y")) {
+								scheduleEntity.setWorkoutStatus("N");
+								scheduleRepository.save(scheduleEntity);
+							}
+						}				
+					}else {			
+						Calendar tempWorkoutEndDateTime = Calendar.getInstance();	//Calendar 형식으로 선언하기 위해 필요함.
+						tempWorkoutEndDateTime.setTime(workoutStartDateTime);
+						tempWorkoutEndDateTime.add(Calendar.HOUR_OF_DAY, scheduleEntity.getWorkoutContinuousTime());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+						Date workoutEndDateTime = sdf.parse(sdf.format(tempWorkoutEndDateTime));
+						if(todayDateTime.compareTo(workoutStartDateTime) >= 0 && todayDateTime.compareTo(workoutEndDateTime) <= 0 && scheduleEntity.getWorkoutStatus().equals("N")) {
+							scheduleEntity.setWorkoutStatus("Y");
+							scheduleRepository.save(scheduleEntity);
+						}else if(todayDateTime.compareTo(workoutEndDateTime) > 0) {
+							Calendar nextWorkoutStartDate = Calendar.getInstance();
+							nextWorkoutStartDate.setTime(workoutStartDate);
+							nextWorkoutStartDate.add(Calendar.HOUR_OF_DAY, scheduleEntity.getWorkoutInterval());
+							scheduleEntity.setWorkoutStatus("N");
+							scheduleEntity.setWorkoutStartDate(dateFormat.format(nextWorkoutStartDate.getTime()));
+							scheduleRepository.save(scheduleEntity);
+						}						
+					}		
+					break;
+				case "Weekly":
+					break;
+				case "Monthly":
+					break;
+			}
+		}
+		
+		
 		String workloadName = scheduleEntity.getWorkloadId().getName();
 		writeLogService.createLogFile(workloadName);
 		// TODO Auto-generated method stub
@@ -556,7 +620,7 @@ public class WorkloadServiceImpl implements WorkloadService {
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false); // 없는 필드로 인한 오류 무시
 		ModelMapper modelMapper = new ModelMapper();
 
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
 		Date currentTime = sdf.parse(sdf.format(new Date()));
 		Calendar currentCalendarDate = Calendar.getInstance();
 		currentCalendarDate.setTime(currentTime);
@@ -573,12 +637,42 @@ public class WorkloadServiceImpl implements WorkloadService {
 		
 		if(scheduleEntity.getFullReplicationDeletedYn().equals("N") && currentTime.compareTo(nextFullReplicationStartDate) >= 0) {
 			Calendar nextFullReplicationDate = Calendar.getInstance();	//다음 풀복제 시간을 Calendar 형식으로 선언하기 위해 필요함.
-			nextFullReplicationDate.setTime(nextFullReplicationStartDate);
-			while(currentCalendarDate.compareTo(nextFullReplicationDate) >= 0) {
-				nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
-			}				
-			scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());
-			scheduleEntity.setFullWorkingStatus("Y");
+			nextFullReplicationDate.setTime(nextFullReplicationStartDate);				
+			nextFullReplicationDate.add(Calendar.MINUTE, scheduleEntity.getFullReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			if(scheduleEntity.getWorkoutStatus().equals("Y")){	//워크아웃 상태가 Y이면 종료한다.
+				writeLogService.writeLogFile(workloadName, "[ERROR]현재 WORK OUT시간입니다.");
+				writeLogService.writeLogFile(workloadName, "[ERROR]스케줄이 진행되지 못하여 다음 전체복제 스케줄로 세팅됩니다.");
+			}else if(scheduleEntity.getFullWorkingStatus().equals("Y")) {
+				writeLogService.writeLogFile(workloadName, "[ERROR]현재 FullReplication 진행중입니다.");				
+				writeLogService.writeLogFile(workloadName, "[ERROR]스케줄이 진행되지 못하여 다음 전체복제 스케줄로 세팅됩니다.");
+			}else {
+				writeLogService.writeLogFile(workloadName, "FullReplication 스케줄이 시작되었습니다.");
+				scheduleEntity.setFullWorkingStatus("Y");
+				scheduleEntity.setScheduleStatus(0);
+			}
+			scheduleEntity.setNextFullReplicationDate(nextFullReplicationDate.getTime());			
+			scheduleRepository.save(scheduleEntity);
+		}
+		
+		if(scheduleEntity.getIncrementalReplicationDeletedYn().equals("N") && currentTime.compareTo(nextIncrementalReplicationStartDate) >= 0 ) {
+			Calendar nextIncrementalReplicationDate = Calendar.getInstance();
+			nextIncrementalReplicationDate.setTime(nextIncrementalReplicationStartDate);
+			nextIncrementalReplicationDate.add(Calendar.MINUTE, scheduleEntity.getIncrementalReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
+			if(scheduleEntity.getWorkoutStatus().equals("Y")){	//워크아웃 상태가 Y이면 종료한다.
+				writeLogService.writeLogFile(workloadName, "[ERROR]현재 WORK OUT시간입니다.");
+				writeLogService.writeLogFile(workloadName, "[ERROR]스케줄이 진행되지 못하여 다음 증분복제 스케줄로 세팅됩니다.");
+			}else if(scheduleEntity.getIncreWorkingStatus().equals("Y")) {
+				writeLogService.writeLogFile(workloadName, "[ERROR]현재 IncrementalAndTestCutOver 진행중입니다.");				
+				writeLogService.writeLogFile(workloadName, "[ERROR]스케줄이 진행되지 못하여 다음 증분복제 스케줄로 세팅됩니다.");
+			}else if(scheduleEntity.getFullWorkingStatus().equals("Y")) {
+				writeLogService.writeLogFile(workloadName, "[ERROR]현재 FullReplication 진행중입니다.");				
+				writeLogService.writeLogFile(workloadName, "[ERROR]스케줄이 진행되지 못하여 다음 증분복제 스케줄로 세팅됩니다.");
+			}else {
+				writeLogService.writeLogFile(workloadName, "IncrementalAndTestFailover 스케줄이 시작되었습니다.");
+				scheduleEntity.setIncreWorkingStatus("Y");
+				scheduleEntity.setScheduleStatus(0);
+			}
+			scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());			
 			scheduleRepository.save(scheduleEntity);
 		}
 
@@ -737,12 +831,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 				
 			}
 		//증분 복제
-		}else if(scheduleEntity.getIncrementalReplicationDeletedYn().equals("N") &&currentTime.compareTo(nextIncrementalReplicationStartDate) >= 0 ) {
-			Calendar nextIncrementalReplicationDate = Calendar.getInstance();
-			nextIncrementalReplicationDate.setTime(nextIncrementalReplicationStartDate);
-			while(currentCalendarDate.compareTo(nextIncrementalReplicationDate) >= 0) {
-				nextIncrementalReplicationDate.add(Calendar.MINUTE, scheduleEntity.getIncrementalReplicationInterval());	//스케줄 주기를 분단위로 치환하여 더하여 다음 리플리케이션 시간을 설정한다.
-			}	
+		}else if(scheduleEntity.getIncrementalReplicationDeletedYn().equals("N") && scheduleEntity.getIncreWorkingStatus().equals("Y"))  {
+
 			
 			List<AvailableActionEntity> availableActionEntityList = availableActionRepository.findByWorkloadId(workloadId);
 			
@@ -790,7 +880,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 				Date finishedDate = new Date(Long.parseLong(workloadOperationValue.getFinishedAt().substring(6, 19)) + 9*60*60*1000); //외국시간이라 9시간 더해줘야 한국시간임.
 				if(workloadOperationValue.getIsSucceeded().equals("true")) {					
 					scheduleEntity.setScheduleStatus(3);
-					scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());
+//					scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());
+					scheduleEntity.setIncreWorkingStatus("N");
 					scheduleEntity.setIncrementalReplicationFinishedDate(finishedDate);
 					scheduleRepository.save(scheduleEntity);
 					writeLogService.writeLogFile(workloadName, "Test FailOver 상태입니다.!");
@@ -798,7 +889,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 						
 				}else if(workloadOperationValue.getIsSucceeded().equals("false")) {
 					scheduleEntity.setScheduleStatus(0);
-					scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());
+//					scheduleEntity.setNextIncrementalReplicationDate(nextIncrementalReplicationDate.getTime());
+					scheduleEntity.setIncreWorkingStatus("N");
 					scheduleEntity.setIncrementalReplicationFinishedDate(finishedDate);
 					scheduleRepository.save(scheduleEntity);
 					writeLogService.writeLogFile(workloadName, "RunIncremental And Test FailOver가 실패하였습니다.");
@@ -847,22 +939,25 @@ public class WorkloadServiceImpl implements WorkloadService {
 				scheduleEntity.setNextFullReplicationDate(sdf.parse(requestScheduleDTO.getNextFullReplicationDate()));
 				scheduleEntity.setFullReplicationInterval(requestScheduleDTO.getFullReplicationInterval());
 				scheduleEntity.setFullReplicationDeletedYn(requestScheduleDTO.getFullReplicationDeletedYn());
+				scheduleEntity.setFullWorkingStatus("N");
 			}else if(requestScheduleDTO.getFullReplicationDeletedYn().equals("Y")) {
 				scheduleEntity.setFullReplicationDeletedYn(requestScheduleDTO.getFullReplicationDeletedYn());
 //				scheduleEntity.setFullReplicationInterval(0);
 				scheduleEntity.setNextFullReplicationDate(null);
+				scheduleEntity.setFullWorkingStatus("N");
 			}
 			
 			if(requestScheduleDTO.getIncrementalReplicationDeletedYn().equals("N")) {
 				scheduleEntity.setNextIncrementalReplicationDate(sdf.parse(requestScheduleDTO.getNextIncrementalReplicationDate()));
 				scheduleEntity.setIncrementalReplicationInterval(requestScheduleDTO.getIncrementalReplicationInterval());
 				scheduleEntity.setIncrementalReplicationDeletedYn(requestScheduleDTO.getIncrementalReplicationDeletedYn());
+				scheduleEntity.setIncreWorkingStatus("N");
 			}else if(requestScheduleDTO.getIncrementalReplicationDeletedYn().equals("Y")) {
 				scheduleEntity.setIncrementalReplicationDeletedYn(requestScheduleDTO.getIncrementalReplicationDeletedYn());
 //				scheduleEntity.setIncrementalReplicationInterval(0);
+				scheduleEntity.setIncreWorkingStatus("N");
 				scheduleEntity.setNextIncrementalReplicationDate(null);
 			}
-			
 			scheduleRepository.save(scheduleEntity);
 			result.put("data", scheduleEntity);
 		}else {
@@ -877,6 +972,8 @@ public class WorkloadServiceImpl implements WorkloadService {
 			
 			scheduleEntity = new ScheduleEntity();
 			scheduleEntity.setWorkloadId(workloadEntity);
+			scheduleEntity.setIncreWorkingStatus("N");
+			scheduleEntity.setFullWorkingStatus("N");
 			if(requestScheduleDTO.getFullReplicationDeletedYn().equals("N")) {
 				scheduleEntity.setNextFullReplicationDate(sdf.parse(requestScheduleDTO.getNextFullReplicationDate()));
 				scheduleEntity.setFullReplicationInterval(requestScheduleDTO.getFullReplicationInterval());

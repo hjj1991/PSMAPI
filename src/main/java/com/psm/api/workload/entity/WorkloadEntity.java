@@ -54,7 +54,7 @@ public class WorkloadEntity extends ResponseWorkloadListDto implements Serializa
 	@Column(nullable = false, unique = true)
 	private String workloadId;	
 	
-	@ManyToOne(optional = true, fetch = FetchType.LAZY)
+	@ManyToOne(optional = true, fetch = FetchType.EAGER)
 	@JoinColumn(name="company_idx", nullable = true)
 	private CompanyEntity companyIdx;
 	
